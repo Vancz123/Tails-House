@@ -1,394 +1,322 @@
 // ==========================================
-// OFICINA DO TAILS - SCRIPT UNIFICADO & COMPLETO
-// (Sem necessidade de scripts inline no HTML)
+// OFICINA DO TAILS - SCRIPT DEFINITIVO COM JSON
 // ==========================================
 
 let tasks = [];
 let currentUser = null;
 let currentFilter = 'all';
 
-// ==========================================
-// 1. VERIFICAÇÃO CRÍTICA DE AUTENTICAÇÃO (Evita recarregamento duplo)
-// ==========================================
+// 1. Verificação inicial síncrona (Esconde o ecrã de login se já estiver autenticado)
 (function checkCriticalAuthEarly() {
-  try {
-    const savedUser = localStorage.getItem('tails_user_raw');
-    if (savedUser && savedUser.trim() !== '') {
-      currentUser = savedUser.trim();
-      // Aplica imediatamente a propriedade para esconder o ecrã de login
-      document.documentElement.style.setProperty('--initial-login-display', 'none');
-    }
-  } catch (err) {
-    console.warn("LocalStorage inacessível na verificação inicial:", err);
-  }
+    try {
+        const user = localStorage.getItem('tails_user_raw');
+        if (user && user.trim()) {
+            currentUser = user.trim();
+            document.documentElement.style.setProperty('--initial-login-display', 'none');
+        }
+    } catch (e) { }
 })();
 
-// ==========================================
-// 2. GESTÃO DE DADOS (SEM JSON NO LOCALSTORAGE)
-// ==========================================
-function getTasksFromStorage() {
-  let rawData = null;
-  try {
-    rawData = localStorage.getItem('tails_tasks_raw');
-  } catch (err) {
-    console.warn("LocalStorage indisponível para leitura:", err);
-  }
-
-  if (!rawData || rawData.trim() === '') return [];
-
-  const taskStrings = rawData.split('|||');
-  return taskStrings.filter(str => str.trim() !== '').map(str => {
-    const parts = str.split(':::');
-    return {
-      id: parts[0] || Date.now().toString(),
-      title: parts[1] || '',
-      category: parts[2] || 'Geral',
-      priority: parts[3] || 'media',
-      completed: parts[4] === 'true'
-    };
-  });
-}
-
-function saveTasksToStorage(tasksArray) {
-  const taskStrings = tasksArray.map(t => 
-    `${t.id}:::${t.title.replace(/:::/g, '').replace(/\|\|\|/g, '')}:::${t.category}:::${t.priority}:::${t.completed}`
-  );
-  const rawData = taskStrings.join('|||');
-  try {
-    localStorage.setItem('tails_tasks_raw', rawData);
-  } catch (err) {
-    console.warn("Erro ao gravar tarefas:", err);
-  }
-}
-
-// ==========================================
-// 3. CONTROLO DE AUTENTICAÇÃO E INTERFACE
-// ==========================================
-function checkAuth() {
-  const loginScreen = document.getElementById('loginScreen');
-  const userGreetingText = document.getElementById('userGreetingText');
-  let savedUser = null;
-
-  try {
-    savedUser = localStorage.getItem('tails_user_raw');
-  } catch (err) {}
-
-  currentUser = savedUser || currentUser;
-
-  if (currentUser && currentUser.trim() !== '') {
-    if (loginScreen) {
-      loginScreen.style.setProperty('display', 'none', 'important');
-      loginScreen.classList.add('hidden');
-    }
-    if (userGreetingText) {
-      userGreetingText.textContent = `Olá, ${currentUser}!`;
-    }
-  } else {
-    if (loginScreen) {
-      loginScreen.style.setProperty('display', 'flex', 'important');
-      loginScreen.classList.remove('hidden');
-    }
-  }
-}
-
-window.fazerLogin = function() {
-  const usernameInput = document.getElementById('usernameInput');
-  const name = usernameInput ? usernameInput.value.trim() : '';
-
-  if (name !== '') {
-    currentUser = name;
+// 2. Leitura e Gravação com JSON (Tarefas isoladas por Utilizador)
+function getTasks() {
     try {
-      localStorage.setItem('tails_user_raw', currentUser);
-    } catch (err) {}
-    checkAuth();
-  } else {
-    alert("Por favor, introduz o teu nome para entrar na Oficina!");
-  }
-};
-
-window.toggleTask = function(id) {
-  tasks = tasks.map(task => {
-    if (task.id === id) {
-      return { ...task, completed: !task.completed };
+        if (!currentUser) return [];
+        // Lê todas as tarefas em JSON
+        const allTasks = JSON.parse(localStorage.getItem('tails_tasks_json') || '[]');
+        // Retorna APENAS as tarefas pertencentes ao utilizador atual
+        return allTasks.filter(t => t.user && t.user.toLowerCase() === currentUser.toLowerCase());
+    } catch (e) {
+        return [];
     }
-    return task;
-  });
-  saveAndRender();
-};
-
-window.deleteTask = function(id) {
-  tasks = tasks.filter(task => task.id !== id);
-  saveAndRender();
-};
-
-window.openEditModal = function(id) {
-  const task = tasks.find(t => t.id === id);
-  const editModal = document.getElementById('editModal');
-  if (!task || !editModal) return;
-
-  document.getElementById('editTaskId').value = task.id;
-  document.getElementById('editTaskTitle').value = task.title;
-  document.getElementById('editTaskCategory').value = task.category;
-  document.getElementById('editTaskPriority').value = task.priority;
-
-  editModal.classList.remove('hidden');
-  editModal.style.display = 'flex';
-};
-
-function saveAndRender() {
-  saveTasksToStorage(tasks);
-  renderTasks();
 }
 
-// ==========================================
-// 4. RENDERIZAÇÃO E FILTRAGEM
-// ==========================================
+function saveTasks() {
+    try {
+        if (!currentUser) return;
+        // Lê todas as tarefas existentes
+        const allTasks = JSON.parse(localStorage.getItem('tails_tasks_json') || '[]');
+
+        // Mantém as tarefas dos OUTROS utilizadores intactas
+        const otherUsersTasks = allTasks.filter(t => !t.user || t.user.toLowerCase() !== currentUser.toLowerCase());
+
+        // Associa o utilizador atual às suas tarefas e junta tudo
+        const myTasks = tasks.map(t => ({ ...t, user: currentUser }));
+        const combined = [...otherUsersTasks, ...myTasks];
+
+        // Guarda o array completo em formato JSON
+        localStorage.setItem('tails_tasks_json', JSON.stringify(combined));
+    } catch (e) { }
+}
+
+// 3. Controlo de Autenticação
+function checkAuth() {
+    const loginScreen = document.getElementById('loginScreen');
+    const greeting = document.getElementById('userGreetingText');
+
+    try {
+        currentUser = localStorage.getItem('tails_user_raw');
+    } catch (e) { }
+
+    if (currentUser && currentUser.trim()) {
+        if (loginScreen) {
+            loginScreen.style.setProperty('display', 'none', 'important');
+            loginScreen.classList.add('hidden');
+        }
+        if (greeting) greeting.textContent = `Olá, ${currentUser}!`;
+        tasks = getTasks();
+        renderTasks();
+    } else {
+        if (loginScreen) {
+            loginScreen.style.setProperty('display', 'flex', 'important');
+            loginScreen.classList.remove('hidden');
+        }
+    }
+}
+
+window.fazerLogin = function () {
+    const input = document.getElementById('usernameInput');
+    const name = input ? input.value.trim() : '';
+    if (!name) {
+        alert("Por favor, introduz o teu nome para entrar!");
+        return;
+    }
+    try {
+        localStorage.setItem('tails_user_raw', name);
+        currentUser = name;
+    } catch (e) { }
+    checkAuth();
+};
+
+// 4. Operações de Tarefas (CRUD)
+window.toggleTask = function (id) {
+    tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+    saveTasks();
+    renderTasks();
+};
+
+window.deleteTask = function (id) {
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks();
+    renderTasks();
+};
+
+window.openEditModal = function (id) {
+    const t = tasks.find(item => item.id === id);
+    const modal = document.getElementById('editModal');
+    if (!t || !modal) return;
+
+    const editId = document.getElementById('editTaskId');
+    const editTitle = document.getElementById('editTaskTitle');
+    const editCat = document.getElementById('editTaskCategory');
+    const editPri = document.getElementById('editTaskPriority');
+
+    if (editId) editId.value = t.id;
+    if (editTitle) editTitle.value = t.title;
+    if (editCat) editCat.value = t.category;
+    if (editPri) editPri.value = t.priority;
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+};
+
+// 5. Renderização no DOM
 function renderTasks() {
-  const taskList = document.getElementById('taskList');
-  const emptyState = document.getElementById('emptyState');
-  const countAll = document.getElementById('countAll');
-  const countActive = document.getElementById('countActive');
-  const countCompleted = document.getElementById('countCompleted');
+    const taskList = document.getElementById('taskList');
+    const emptyState = document.getElementById('emptyState');
+    const countAll = document.getElementById('countAll');
+    const countActive = document.getElementById('countActive');
+    const countCompleted = document.getElementById('countCompleted');
 
-  const total = tasks.length;
-  const completed = tasks.filter(t => t.completed).length;
-  const active = total - completed;
+    if (countAll) countAll.textContent = tasks.length;
+    if (countActive) countActive.textContent = tasks.filter(t => !t.completed).length;
+    if (countCompleted) countCompleted.textContent = tasks.filter(t => t.completed).length;
 
-  if (countAll) countAll.textContent = total;
-  if (countActive) countActive.textContent = active;
-  if (countCompleted) countCompleted.textContent = completed;
-
-  let filteredTasks = tasks;
-  if (currentFilter === 'active') {
-    filteredTasks = tasks.filter(t => !t.completed);
-  } else if (currentFilter === 'completed') {
-    filteredTasks = tasks.filter(t => t.completed);
-  }
-
-  if (!taskList) return;
-  taskList.innerHTML = '';
-
-  if (filteredTasks.length === 0) {
-    if (emptyState) emptyState.classList.remove('hidden');
-  } else {
-    if (emptyState) emptyState.classList.add('hidden');
-
-    filteredTasks.forEach(task => {
-      const li = document.createElement('li');
-      li.className = `task-item priority-${task.priority} ${task.completed ? 'completed' : ''}`;
-
-      li.innerHTML = `
-        <div class="task-content">
-          <input type="checkbox" class="checkbox-custom" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
-          <div class="task-details">
-            <span class="task-title">${escapeHTML(task.title)}</span>
-            <span class="task-badge"><i class="fa-solid fa-tag"></i> ${task.category}</span>
-          </div>
-        </div>
-        <div class="task-actions">
-          <button class="btn btn-sm btn-outline" onclick="openEditModal('${task.id}')" title="Editar">
-            <i class="fa-solid fa-pen"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${task.id}')" title="Remover">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      `;
-      taskList.appendChild(li);
+    const filtered = tasks.filter(t => {
+        if (currentFilter === 'active') return !t.completed;
+        if (currentFilter === 'completed') return t.completed;
+        return true;
     });
-  }
+
+    if (!taskList) return;
+    taskList.innerHTML = '';
+
+    if (emptyState) {
+        emptyState.classList.toggle('hidden', filtered.length > 0);
+    }
+
+    filtered.forEach(t => {
+        const li = document.createElement('li');
+        li.className = `task-item priority-${t.priority} ${t.completed ? 'completed' : ''}`;
+        li.innerHTML = `
+      <div class="task-content">
+        <input type="checkbox" class="checkbox-custom" ${t.completed ? 'checked' : ''} onchange="toggleTask('${t.id}')">
+        <div class="task-details">
+          <span class="task-title">${escapeHTML(t.title)}</span>
+          <span class="task-badge"><i class="fa-solid fa-tag"></i> ${t.category}</span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="btn btn-sm btn-outline" onclick="openEditModal('${t.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${t.id}')" title="Remover"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `;
+        taskList.appendChild(li);
+    });
 }
 
 function escapeHTML(str) {
-  return str.replace(/[&<>'"]/g, 
-    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-  );
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-// ==========================================
-// 5. INTEGRAÇÃO COM API EXTERNA
-// ==========================================
-async function fetchExternalAPI() {
-  const apiContent = document.getElementById('apiContent');
-  if (!apiContent) return;
-  try {
-    const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.7167&longitude=-9.1333&current_weather=true');
-    const data = await response.json();
-
-    if (data && data.current_weather) {
-      const temp = data.current_weather.temperature;
-      const wind = data.current_weather.windspeed;
-      apiContent.innerHTML = `
-        <div><strong>Clima na Oficina:</strong> ${temp}°C</div>
-        <div><strong>Vento p/ Voar (Tornado):</strong> ${wind} km/h</div>
-      `;
-    }
-  } catch (error) {
-    apiContent.innerHTML = `<div><i class="fa-solid fa-triangle-exclamation"></i> Sinal de Radar Offline</div>`;
-  }
-}
-
-// ==========================================
-// 6. GESTÃO DE TEMA (CLARO / ESCURO)
-// ==========================================
-function initTheme() {
-  const themeToggleBtn = document.getElementById('themeToggleBtn');
-  let savedTheme = 'dark';
-  try {
-    savedTheme = localStorage.getItem('tails_theme_raw') || 'dark';
-  } catch (err) {}
-
-  if (savedTheme === 'light') {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-    if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
-  } else {
-    document.documentElement.classList.remove('light');
-    document.documentElement.classList.add('dark');
-    if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
-  }
-}
-
-// ==========================================
-// 7. INICIALIZAÇÃO E EVENTOS
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-  tasks = getTasksFromStorage();
-
-  const loginBtn = document.getElementById('loginBtn');
-  if (loginBtn) {
-    loginBtn.addEventListener('click', window.fazerLogin);
-  }
-
-  const usernameInput = document.getElementById('usernameInput');
-  if (usernameInput) {
-    usernameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        window.fazerLogin();
-      }
-    });
-  }
-
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      try {
-        localStorage.removeItem('tails_user_raw');
-      } catch (err) {}
-      currentUser = null;
-      if (usernameInput) usernameInput.value = '';
-      checkAuth();
-    });
-  }
-
-  const themeToggleBtn = document.getElementById('themeToggleBtn');
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', () => {
-      const isDark = document.documentElement.classList.contains('dark');
-      if (isDark) {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-        try { localStorage.setItem('tails_theme_raw', 'light'); } catch (err) {}
-        themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
-      } else {
-        document.documentElement.classList.remove('light');
-        document.documentElement.classList.add('dark');
-        try { localStorage.setItem('tails_theme_raw', 'dark'); } catch (err) {}
-        themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
-      }
-    });
-  }
-
-  const taskForm = document.getElementById('taskForm');
-  if (taskForm) {
-    taskForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const taskTitle = document.getElementById('taskTitle');
-      const taskCategory = document.getElementById('taskCategory');
-      const taskPriority = document.getElementById('taskPriority');
-
-      const title = taskTitle ? taskTitle.value.trim() : '';
-      if (!title) return;
-
-      tasks.unshift({
-        id: Date.now().toString(),
-        title: title,
-        category: taskCategory ? taskCategory.value : 'Geral',
-        priority: taskPriority ? taskPriority.value : 'media',
-        completed: false
-      });
-
-      saveAndRender();
-      if (taskTitle) taskTitle.value = '';
-    });
-  }
-
-  const closeModalBtn = document.getElementById('closeModalBtn');
-  const editModal = document.getElementById('editModal');
-  if (closeModalBtn && editModal) {
-    closeModalBtn.addEventListener('click', () => {
-      editModal.classList.add('hidden');
-      editModal.style.display = 'none';
-    });
-  }
-
-  const editForm = document.getElementById('editForm');
-  if (editForm) {
-    editForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const id = document.getElementById('editTaskId').value;
-      const title = document.getElementById('editTaskTitle').value.trim();
-      const category = document.getElementById('editTaskCategory').value;
-      const priority = document.getElementById('editTaskPriority').value;
-
-      tasks = tasks.map(t => {
-        if (t.id === id) {
-          return { ...t, title, category, priority };
+// 6. API Clima (Open-Meteo)
+async function fetchWeather() {
+    const box = document.getElementById('apiContent');
+    if (!box) return;
+    try {
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.7167&longitude=-9.1333&current_weather=true');
+        const data = await res.json();
+        if (data && data.current_weather) {
+            box.innerHTML = `<div><strong>Clima:</strong> ${data.current_weather.temperature}°C</div><div><strong>Vento:</strong> ${data.current_weather.windspeed} km/h</div>`;
         }
-        return t;
-      });
+    } catch (e) {
+        box.innerHTML = `<div><i class="fa-solid fa-triangle-exclamation"></i> Radar Offline</div>`;
+    }
+}
 
-      if (editModal) {
-        editModal.classList.add('hidden');
-        editModal.style.display = 'none';
-      }
-      saveAndRender();
+// 7. Eventos ao carregar a página
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    fetchWeather();
+
+    // Gestão de Tema (Claro / Escuro)
+    try {
+        const savedTheme = localStorage.getItem('tails_theme_raw') || 'dark';
+        document.documentElement.classList.toggle('light', savedTheme === 'light');
+        const themeBtn = document.getElementById('themeToggleBtn');
+        if (themeBtn) {
+            themeBtn.innerHTML = `<i class="fa-solid fa-${savedTheme === 'light' ? 'sun' : 'moon'}"></i>`;
+        }
+    } catch (e) { }
+
+    document.getElementById('themeToggleBtn')?.addEventListener('click', () => {
+        const isLight = document.documentElement.classList.toggle('light');
+        try {
+            localStorage.setItem('tails_theme_raw', isLight ? 'light' : 'dark');
+        } catch (e) { }
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) btn.innerHTML = `<i class="fa-solid fa-${isLight ? 'sun' : 'moon'}"></i>`;
     });
-  }
 
-  const filterBtns = document.querySelectorAll('.filter-btn');
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentFilter = btn.dataset.filter;
-      renderTasks();
+    // Eventos do Login e Logout
+    document.getElementById('loginBtn')?.addEventListener('click', window.fazerLogin);
+    document.getElementById('usernameInput')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            window.fazerLogin();
+        }
     });
-  });
 
-  const clearCompletedBtn = document.getElementById('clearCompletedBtn');
-  if (clearCompletedBtn) {
-    clearCompletedBtn.addEventListener('click', () => {
-      tasks = tasks.filter(t => !t.completed);
-      saveAndRender();
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        try {
+            localStorage.removeItem('tails_user_raw');
+        } catch (e) { }
+        currentUser = null;
+        const input = document.getElementById('usernameInput');
+        if (input) input.value = '';
+        checkAuth();
     });
-  }
 
-  const datetimeDisplay = document.getElementById('datetime');
-  function updateClock() {
-    if (!datetimeDisplay) return;
-    const now = new Date();
-    datetimeDisplay.textContent = now.toLocaleString('pt-PT', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    // Criar Nova Tarefa
+    document.getElementById('taskForm')?.addEventListener('submit', e => {
+        e.preventDefault();
+        const titleInput = document.getElementById('taskTitle');
+        const catInput = document.getElementById('taskCategory');
+        const priInput = document.getElementById('taskPriority');
+
+        const title = titleInput ? titleInput.value.trim() : '';
+        if (!title) return;
+
+        try {
+            currentUser = localStorage.getItem('tails_user_raw') || currentUser;
+        } catch (e) { }
+
+        tasks.unshift({
+            id: Date.now().toString(),
+            title,
+            category: catInput ? catInput.value : 'Geral',
+            priority: priInput ? priInput.value : 'media',
+            completed: false,
+            user: currentUser ? currentUser.trim() : 'Geral'
+        });
+
+        saveTasks();
+        renderTasks();
+        if (titleInput) titleInput.value = '';
     });
-  }
 
-  initTheme();
-  checkAuth();
-  updateClock();
-  setInterval(updateClock, 1000);
-  fetchExternalAPI();
-  renderTasks();
+    // Guardar Edição de Tarefa
+    document.getElementById('editForm')?.addEventListener('submit', e => {
+        e.preventDefault();
+        const editId = document.getElementById('editTaskId');
+        const editTitle = document.getElementById('editTaskTitle');
+        const editCat = document.getElementById('editTaskCategory');
+        const editPri = document.getElementById('editTaskPriority');
+        const modal = document.getElementById('editModal');
+
+        if (!editId) return;
+        const id = editId.value;
+
+        tasks = tasks.map(t => t.id === id ? {
+            ...t,
+            title: editTitle ? editTitle.value.trim() : t.title,
+            category: editCat ? editCat.value : t.category,
+            priority: editPri ? editPri.value : t.priority
+        } : t);
+
+        saveTasks();
+        renderTasks();
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+    });
+
+    // Cancelar Edição
+    document.getElementById('closeModalBtn')?.addEventListener('click', () => {
+        const modal = document.getElementById('editModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+    });
+
+    // Filtros (Todas, Ativas, Concluídas)
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            const target = e.currentTarget;
+            target.classList.add('active');
+            currentFilter = target.dataset.filter || 'all';
+            renderTasks();
+        });
+    });
+
+    // Limpar Concluídas
+    document.getElementById('clearCompletedBtn')?.addEventListener('click', () => {
+        tasks = tasks.filter(t => !t.completed);
+        saveTasks();
+        renderTasks();
+    });
+
+    // Atualização da Hora em Tempo Real
+    setInterval(() => {
+        const clock = document.getElementById('datetime');
+        if (clock) {
+            clock.textContent = new Date().toLocaleString('pt-PT', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        }
+    }, 1000);
 });
