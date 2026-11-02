@@ -1,15 +1,13 @@
 // ==========================================
-// OFICINA DO TAILS - SCRIPT COMPLETO E DOCUMENTADO
+// OFICINA DO TAILS - SCRIPT DEFINITIVO (PT/EN + JSON + OPEN-METEO)
 // ==========================================
 
-// Variáveis de Estado Global da Aplicação
-let tasks = [];            // Array em memória para armazenar as tarefas do utilizador ativo
-let currentUser = null;    // Nome do utilizador autenticado no momento
-let currentFilter = 'all'; // Filtro ativo atual ('all', 'active', 'completed')
-let currentLang = 'pt';    // Idioma atual do sistema ('pt' ou 'en')
+let tasks = [];
+let currentUser = null;
+let currentFilter = 'all';
+let currentLang = 'pt';
 
-// Dicionário de Traduções Bilingue (PT / EN)
-// Contém todos os textos estáticos e dinâmicos da interface para suporte multilingue completo
+// Dicionário de Traduções Completo
 const translations = {
   pt: {
     workshopTitle: "Tails' Workshop",
@@ -93,11 +91,6 @@ const translations = {
   }
 };
 
-/**
- * Função Auto-Executável (IIFE) - Verificação Inicial Síncrona
- * Objetivo: Verifica antecipadamente no LocalStorage se existe um utilizador autenticado 
- * e um idioma guardado antes de renderizar o DOM, evitando o efeito visual de flash (piscar a janela de login).
- */
 (function checkCriticalAuthEarly() {
   try {
     const user = localStorage.getItem('tails_user_raw');
@@ -110,11 +103,6 @@ const translations = {
   } catch (e) { }
 })();
 
-/**
- * Traduz e normaliza a categoria da tarefa para exibição correta no idioma atual.
- * @param {string} cat - Categoria original guardada.
- * @returns {string} Categoria traduzida para exibição em badge.
- */
 function getLocalizedCategory(cat) {
   const t = translations[currentLang];
   if (!cat) return t.badgeGeneral;
@@ -124,40 +112,32 @@ function getLocalizedCategory(cat) {
   return t.badgeGeneral;
 }
 
-/**
- * Função principal de internacionalização (i18n).
- * Atualiza todos os textos estáticos da interface (títulos, botões, modais, placeholders, 
- * opções de seletores de categoria/prioridade) instantaneamente com base no idioma atual.
- */
 function updateTexts() {
   const t = translations[currentLang];
 
-  // Atualiza as opções dos menus de Categoria (Formulário e Modal)
+  // Selects de Categoria
   document.querySelectorAll('#taskCategory, #editTaskCategory').forEach(select => {
     if (select.options[0]) select.options[0].text = t.catWorkshop;
     if (select.options[1]) select.options[1].text = t.catMission;
     if (select.options[2]) select.options[2].text = t.catGeneral;
   });
 
-  // Atualiza as opções dos menus de Prioridade (Formulário e Modal)
+  // Selects de Prioridade
   document.querySelectorAll('#taskPriority, #editTaskPriority').forEach(select => {
     if (select.options[0]) select.options[0].text = t.prioLow;
     if (select.options[1]) select.options[1].text = t.prioMed;
     if (select.options[2]) select.options[2].text = t.prioHigh;
   });
 
-  // Atualização do Subtítulo principal
   const subTitleEl = document.getElementById('workshopSub');
   if (subTitleEl) subTitleEl.textContent = t.workshopSub;
 
-  // Atualização da Saudação do Utilizador
   const greetingEl = document.getElementById('userGreetingText');
   if (greetingEl && currentUser) greetingEl.textContent = `${t.greeting}, ${currentUser}!`;
 
   const subGreeting = document.querySelector('.user-greeting p');
   if (subGreeting) subGreeting.textContent = t.greetingSub;
 
-  // Atualização do Radar Meteorológico
   const radarTitleEl = document.querySelector('.api-header');
   if (radarTitleEl) radarTitleEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> ${t.radarTitle}`;
 
@@ -166,7 +146,6 @@ function updateTexts() {
     apiContent.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t.radarLoading}`;
   }
 
-  // Atualização do formulário de criação de tarefas
   const taskTitleInput = document.getElementById('taskTitle');
   if (taskTitleInput) taskTitleInput.placeholder = t.placeholderTitle;
 
@@ -176,7 +155,7 @@ function updateTexts() {
   const addBtn = document.querySelector('#taskForm .btn-primary');
   if (addBtn) addBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${t.btnAdd}`;
 
-  // Atualização dos botões de filtro e contagens
+  // Botões de Filtro
   const countAllVal = document.getElementById('countAll') ? document.getElementById('countAll').textContent : '0';
   const countActiveVal = document.getElementById('countActive') ? document.getElementById('countActive').textContent : '0';
   const countCompletedVal = document.getElementById('countCompleted') ? document.getElementById('countCompleted').textContent : '0';
@@ -196,7 +175,6 @@ function updateTexts() {
   const emptyText = document.querySelector('#emptyState p');
   if (emptyText) emptyText.textContent = t.emptyState;
 
-  // Atualização do Ecrã de Login
   const loginH2 = document.querySelector('.login-card h2');
   if (loginH2) loginH2.innerHTML = `<i class="fa-solid fa-gears"></i> ${t.loginTitle}`;
 
@@ -209,13 +187,12 @@ function updateTexts() {
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) loginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> ${t.loginBtn}`;
 
-  // Atualização do Botão de Logout no Cabeçalho
   const logoutBtn = document.getElementById('logoutBtn');
   const logoutSpan = document.getElementById('logoutBtnText');
   if (logoutSpan) logoutSpan.textContent = t.logoutText;
   if (logoutBtn) logoutBtn.title = t.logout;
 
-  // Atualização do Modal de Edição de Tarefas
+  // Atualizar textos do Modal de Edição
   const modalTitleSpan = document.getElementById('modalTitleText');
   if (modalTitleSpan) modalTitleSpan.textContent = t.editModalTitle;
 
@@ -234,15 +211,10 @@ function updateTexts() {
   const saveBtnSpan = document.getElementById('saveBtnText');
   if (saveBtnSpan) saveBtnSpan.textContent = t.btnSave;
 
-  // Atualização do indicador de idioma no botão de alternância
   const langBtnText = document.getElementById('langBtnText');
   if (langBtnText) langBtnText.textContent = currentLang.toUpperCase();
 }
 
-/**
- * Lê e filtra as tarefas do LocalStorage garantindo isolamento total por utilizador.
- * @returns {Array} Array contendo apenas as tarefas associadas ao `currentUser`.
- */
 function getTasks() {
   try {
     if (!currentUser) return [];
@@ -253,10 +225,6 @@ function getTasks() {
   }
 }
 
-/**
- * Persiste o estado atual das tarefas no LocalStorage em formato JSON serializado.
- * Preserva intactas as tarefas de outros utilizadores que partilhem o mesmo navegador.
- */
 function saveTasks() {
   try {
     if (!currentUser) return;
@@ -268,10 +236,6 @@ function saveTasks() {
   } catch (e) { }
 }
 
-/**
- * Verifica o estado de autenticação. 
- * Se o utilizador estiver autenticado, oculta o ecrã de login e carrega as tarefas; senão, exibe o terminal de login.
- */
 function checkAuth() {
   const loginScreen = document.getElementById('loginScreen');
   try {
@@ -294,9 +258,6 @@ function checkAuth() {
   updateTexts();
 }
 
-/**
- * Processa o login do utilizador validando a introdução do nome no terminal.
- */
 window.fazerLogin = function () {
   const input = document.getElementById('usernameInput');
   const name = input ? input.value.trim() : '';
@@ -311,30 +272,18 @@ window.fazerLogin = function () {
   checkAuth();
 };
 
-/**
- * Alterna o estado de conclusão (ativo/concluído) de uma tarefa específica.
- * @param {string} id - Identificador único da tarefa.
- */
 window.toggleTask = function (id) {
   tasks = tasks.map(item => item.id === id ? { ...item, completed: !item.completed } : item);
   saveTasks();
   renderTasks();
 };
 
-/**
- * Remove uma tarefa específica do array com base no ID e atualiza o LocalStorage.
- * @param {string} id - Identificador único da tarefa.
- */
 window.deleteTask = function (id) {
   tasks = tasks.filter(item => item.id !== id);
   saveTasks();
   renderTasks();
 };
 
-/**
- * Abre a janela modal de edição e preenche os campos com os dados da tarefa selecionada.
- * @param {string} id - Identificador único da tarefa.
- */
 window.openEditModal = function (id) {
   const item = tasks.find(t => t.id === id);
   const modal = document.getElementById('editModal');
@@ -354,9 +303,6 @@ window.openEditModal = function (id) {
   modal.style.display = 'flex';
 };
 
-/**
- * Renderiza dinamicamente a lista de tarefas no DOM, aplicando filtros ativos e calculando contadores.
- */
 function renderTasks() {
   const taskList = document.getElementById('taskList');
   const emptyState = document.getElementById('emptyState');
@@ -413,19 +359,11 @@ function renderTasks() {
   });
 }
 
-/**
- * Sanitiza texto inserido pelo utilizador para evitar vulnerabilidades de injeção de HTML/XSS.
- * @param {string} str - Texto original.
- * @returns {string} Texto sanitizado.
- */
 function escapeHTML(str) {
   if (!str) return '';
   return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-/**
- * Consome de forma assíncrona a API pública Open-Meteo para obter dados meteorológicos em tempo real.
- */
 async function fetchWeather() {
   const box = document.getElementById('apiContent');
   if (!box) return;
@@ -435,18 +373,31 @@ async function fetchWeather() {
     const data = await res.json();
     if (data && data.current_weather) {
       box.innerHTML = `<div><strong>${t.weatherTemp}:</strong> ${data.current_weather.temperature}°C</div><div><strong>${t.weatherWind}:</strong> ${data.current_weather.windspeed} km/h</div>`;
+    } else {
+      throw new Error("Invalid weather data");
     }
   } catch (e) {
     box.innerHTML = `<div><i class="fa-solid fa-triangle-exclamation"></i> ${t.radarOffline}</div>`;
   }
 }
 
-// Event Listeners e Inicialização Global ao carregar o DOM
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   fetchWeather();
 
-  // Injeção dinâmica do botão de alternância de idioma no cabeçalho
+  // Atualização imediata do relógio ao carregar
+  const updateClock = () => {
+    const clock = document.getElementById('datetime');
+    if (clock) {
+      clock.textContent = new Date().toLocaleString(currentLang === 'pt' ? 'pt-PT' : 'en-US', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+
   const headerControls = document.querySelector('.header-controls');
   if (headerControls && !document.getElementById('langToggleBtn')) {
     const langBtn = document.createElement('button');
@@ -461,11 +412,11 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTexts();
       renderTasks();
       fetchWeather();
+      updateClock();
     });
     headerControls.insertBefore(langBtn, headerControls.firstChild);
   }
 
-  // Gestão de Tema (Modo Escuro / Claro)
   try {
     const savedTheme = localStorage.getItem('tails_theme_raw') || 'dark';
     document.documentElement.classList.toggle('light', savedTheme === 'light');
@@ -482,7 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.innerHTML = `<i class="fa-solid fa-${isLight ? 'sun' : 'moon'}"></i>`;
   });
 
-  // Gestão de eventos para Login e Logout
   document.getElementById('loginBtn')?.addEventListener('click', window.fazerLogin);
   document.getElementById('usernameInput')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
@@ -499,7 +449,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
   });
 
-  // Evento de submissão para criar nova tarefa
   document.getElementById('taskForm')?.addEventListener('submit', e => {
     e.preventDefault();
     const titleInput = document.getElementById('taskTitle');
@@ -525,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (titleInput) titleInput.value = '';
   });
 
-  // Evento de submissão para guardar alterações na edição (Modal)
   document.getElementById('editForm')?.addEventListener('submit', e => {
     e.preventDefault();
     const editId = document.getElementById('editTaskId');
@@ -560,7 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Gestão de filtros de tarefas (Todas, Ativas, Concluídas)
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -571,7 +518,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Botão para limpar todas as tarefas concluídas em lote
   document.getElementById('clearCompletedBtn')?.addEventListener('click', () => {
     tasks = tasks.filter(t => !t.completed);
     saveTasks();
