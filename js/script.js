@@ -443,18 +443,6 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   fetchWeather();
 
-  // Relógio em tempo real
-  const updateClock = () => {
-    const clock = document.getElementById('datetime');
-    if (clock) {
-      clock.textContent = new Date().toLocaleString(currentLang === 'pt' ? 'pt-PT' : 'en-US', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-    }
-  };
-  updateClock();
-
   // Injeção do botão de alterar idioma no cabeçalho
   const headerControls = document.querySelector('.header-controls');
   if (headerControls && !document.getElementById('langToggleBtn')) {
@@ -587,6 +575,24 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTasks();
   });
 
+  // Função para atualizar o relógio digital em tempo real (Formato 24 Horas Estrito de modo a funcionar no Pages)
+  const updateClock = () => {
+    const clock = document.getElementById('datetime');
+    if (clock) {
+      const now = new Date();
+      clock.textContent = now.toLocaleString('pt-PT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false // Força o formato de 24 horas, eliminando AM/PM
+      });
+    }
+  };
+  updateClock();
+  setInterval(updateClock, 1000); // Atualiza o relógio a cada 1 segundo
   // Intervalo do relógio a cada segundo
   setInterval(updateClock, 1000);
 });
