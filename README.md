@@ -1,2 +1,1 @@
-Aqui Encontra-se a oficina do tails
-Onde construimos todos os tipos de tarefas e invençoes de forma simples e eficaz
+O meu projeto final intitula-se 'Oficina do Tails', um Gestor de Tarefas Inteligente desenvolvido com inspiração no universo do Sonic, focado especificamente no personagem Miles 'Tails' Prower. O objetivo foi criar uma aplicação web interativa, responsiva e totalmente funcional para o dia a dia."
