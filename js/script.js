@@ -114,7 +114,7 @@ themeToggleBtn.addEventListener('click', () => {
 // 5. AUTENTICAÇÃO E SESSÃO
 // ==========================================
 function checkAuth() {
-    if (currentUser) {
+    if (currentUser && currentUser !== '') {
         loginScreen.classList.add('hidden');
         userGreetingText.textContent = `Olá, ${currentUser}!`;
     } else {
@@ -123,11 +123,15 @@ function checkAuth() {
 }
 
 loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Impede a página de dar refresh!
+
     const username = usernameInput.value.trim();
-    if (username) {
+    if (username !== '') {
         currentUser = username;
+        // Guardar a string diretamente no LocalStorage
         localStorage.setItem('tails_user_raw', currentUser);
+
+        // Esconder a tela de login e atualizar a saudação
         checkAuth();
     }
 });
