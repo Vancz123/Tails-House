@@ -522,3 +522,95 @@ html.light .overlay {
   font-size: 0.75rem;
   padding: 6px 10px;
 }
+
+/* ==========================================
+   MEDIA QUERIES RESPONSIVAS - OFICINA DO TAILS
+   Adaptação fluida para dispositivos móveis, tablets e ecrãs pequenos
+   ========================================== */
+
+/* Ecrãs de largura intermédia (Tablets e Portáteis compactos <= 1024px) */
+@media screen and (max-width: 1024px) {
+
+  .workshop-container,
+  .dashboard-grid {
+    padding: 15px;
+  }
+}
+
+/* Dispositivos móveis e tablets verticais (<= 768px) */
+@media screen and (max-width: 768px) {
+
+  /* Cabeçalho principal empilhado */
+  .workshop-header,
+  header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .header-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Grelha de conteúdos passa para 1 coluna */
+  .dashboard-grid,
+  .main-grid,
+  .content-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px;
+  }
+
+  /* Cartões e formulários */
+  .card,
+  .form-card,
+  .radar-card {
+    padding: 15px;
+  }
+
+  .task-form,
+  #taskForm {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Filtros de tarefas */
+  .filters-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-btn {
+    width: 100%;
+  }
+}
+
+/* Telemóveis pequenos (<= 480px) */
+@media screen and (max-width: 480px) {
+  body {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .workshop-title,
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .task-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .task-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
