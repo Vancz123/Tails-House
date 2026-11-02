@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oficina do Tails - Gestor de Tarefas Inteligente</title>
+
+    <!-- Font Awesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Estilos CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Tela de Login (Simulação de Sessão) -->
+    <div id="loginScreen" class="overlay">
+        <div class="card login-card">
+            <div class="avatar-container">
+                <!-- Imagem do Tails especificada -->
+                <img src="image\Tails_think.jpg" alt="Miles Tails Prower" class="tails-avatar">
+            </div>
+            <h2><i class="fa-solid fa-gears"></i> Oficina do Tails</h2>
+            <p>Introduz o teu nome para aceder ao Gestor de Tarefas:</p>
+            <form id="loginForm">
+                <input type="text" id="usernameInput" placeholder="Ex: Miles Prower" required>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Entrar na
+                    Oficina</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Aplicação Principal -->
+    <div class="app-container">
+        <!-- Cabeçalho -->
+        <header class="main-header">
+            <div class="header-brand">
+                <!-- Imagem do Tails no Header -->
+                <img src="image\Miles_Tails_Prower_Sonic_and_All-Stars_Racing_Transformed_1.webp" alt="Tails Icon"
+                    class="tails-logo">
+                <div>
+                    <h1>Tails' Workshop</h1>
+                    <p class="subtitle">Gestor de Tarefas Inteligente</p>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="datetime-display">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="datetime">--:--:--</span>
+                </div>
+                <button id="themeToggleBtn" class="btn btn-icon" title="Alternar Tema (Claro/Escuro)">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <button id="logoutBtn" class="btn btn-outline" title="Encerrar Sessão">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+                </button>
+            </div>
+        </header>
+
+        <!-- Barra de Boas-Vindas e API Status -->
+        <section class="welcome-bar">
+            <div class="user-greeting">
+                <h2><span id="userGreetingText">Olá, Utilizador!</span> <i class="fa-solid fa-wrench"></i></h2>
+                <p>Pronto para organizar os teus inventos e missões hoje?</p>
+            </div>
+
+            <!-- Widget de Conexão com API -->
+            <div class="api-widget" id="apiWidget">
+                <div class="api-header">
+                    <i class="fa-solid fa-satellite-dish"></i> Radar da Oficina (API Open-Meteo)
+                </div>
+                <div class="api-content" id="apiContent">
+                    <i class="fa-solid fa-spinner fa-spin"></i> A ligar aos radares...
+                </div>
+            </div>
+        </section>
+
+        <!-- Layout Principal -->
+        <main class="main-content">
+            <!-- Formulário para Criar Tarefa -->
+            <section class="card form-card">
+                <h3><i class="fa-solid fa-plus"></i> Nova Missão / Tarefa</h3>
+                <form id="taskForm">
+                    <div class="form-group">
+                        <input type="text" id="taskTitle" placeholder="O que precisa de ser feito?" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <select id="taskCategory">
+                                <option value="Oficina">Oficina / Inventos</option>
+                                <option value="Missão">Missão Sonic</option>
+                                <option value="Geral">Geral</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select id="taskPriority">
+                                <option value="baixa">Prioridade Baixa</option>
+                                <option value="media" selected>Prioridade Média</option>
+                                <option value="alta">Prioridade Alta</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i>
+                            Adicionar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Painel de Filtros e Contadores -->
+            <section class="controls-section">
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">Todas (<span id="countAll">0</span>)</button>
+                    <button class="filter-btn" data-filter="active">Ativas (<span id="countActive">0</span>)</button>
+                    <button class="filter-btn" data-filter="completed">Concluídas (<span
+                            id="countCompleted">0</span>)</button>
+                </div>
+                <button id="clearCompletedBtn" class="btn btn-sm btn-outline-danger">
+                    <i class="fa-solid fa-trash"></i> Limpar Concluídas
+                </button>
+            </section>
+
+            <!-- Lista de Tarefas -->
+            <section class="tasks-container">
+                <ul id="taskList" class="task-list"></ul>
+                <div id="emptyState" class="empty-state">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <p>Nenhuma tarefa encontrada na Oficina!</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal para Edição de Tarefas -->
+    <div id="editModal" class="overlay hidden">
+        <div class="card modal-card">
+            <h3><i class="fa-solid fa-pen-to-square"></i> Editar Tarefa</h3>
+            <form id="editForm">
+                <input type="hidden" id="editTaskId">
+                <div class="form-group">
+                    <label for="editTaskTitle">Título da Tarefa:</label>
+                    <input type="text" id="editTaskTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="editTaskCategory">Categoria:</label>
+                    <select id="editTaskCategory">
+                        <option value="Oficina">Oficina / Inventos</option>
+                        <option value="Missão">Missão Sonic</option>
+                        <option value="Geral">Geral</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editTaskPriority">Prioridade:</label>
+                    <select id="editTaskPriority">
+                        <option value="baixa">Baixa</option>
+                        <option value="media">Média</option>
+                        <option value="alta">Alta</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="closeModalBtn" class="btn btn-outline">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script JS -->
+    <script src="/js/script.js"></script>
+</body>
+
+</html>
