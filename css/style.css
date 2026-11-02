@@ -493,3 +493,32 @@ html.light .overlay {
 .hidden {
   display: none !important;
 }
+
+/* Otimização do cabeçalho e controlos para evitar quebras de linha entre PT e EN */
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  /* Impede que os botões quebrem para a linha de baixo */
+}
+
+#logoutBtn {
+  min-width: 95px;
+  padding: 8px 12px;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.datetime-display {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+}
