@@ -51,7 +51,8 @@
     <header class="main-header card tech-border-header">
       <div class="header-brand">
         <div class="logo-pulse-wrapper">
-          <img src="image/Tails_think.jpg" alt="Tails Icon" class="tails-logo"
+          <img src="image\Miles_Tails_Prower_Sonic_and_All-Stars_Racing_Transformed_1.webp" alt="Tails Icon"
+            class="tails-logo"
             onerror="this.src='https://upload.wikimedia.org/wikipedia/en/b/b3/Tails_Sonic_the_Hedgehog.png'">
         </div>
         <div>
@@ -150,15 +151,15 @@
   <!-- Modal para Edição de Tarefas -->
   <div id="editModal" class="overlay hidden">
     <div class="card modal-card tech-border">
-      <h3><i class="fa-solid fa-pen-to-square"></i> Editar Tarefa</h3>
+      <h3><i class="fa-solid fa-pen-to-square"></i> <span id="modalTitleText">Editar Tarefa</span></h3>
       <form id="editForm">
         <input type="hidden" id="editTaskId">
         <div class="form-group">
-          <label for="editTaskTitle">Título da Tarefa:</label>
+          <label for="editTaskTitle" id="editTitleLabelText">Título da Tarefa:</label>
           <input type="text" id="editTaskTitle" required>
         </div>
         <div class="form-group">
-          <label for="editTaskCategory">Categoria:</label>
+          <label for="editTaskCategory" id="editCatLabelText">Categoria:</label>
           <select id="editTaskCategory">
             <option value="Oficina">Oficina / Inventos</option>
             <option value="Missão">Missão Sonic</option>
@@ -166,7 +167,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="editTaskPriority">Prioridade:</label>
+          <label for="editTaskPriority" id="editPriLabelText">Prioridade:</label>
           <select id="editTaskPriority">
             <option value="baixa">Baixa</option>
             <option value="media">Média</option>
@@ -174,8 +175,9 @@
           </select>
         </div>
         <div class="modal-actions">
-          <button type="button" id="closeModalBtn" class="btn btn-outline">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar Alterações</button>
+          <button type="button" id="closeModalBtn" class="btn btn-outline"><span
+              id="cancelBtnText">Cancelar</span></button>
+          <button type="submit" class="btn btn-primary"><span id="saveBtnText">Guardar Alterações</span></button>
         </div>
       </form>
     </div>
