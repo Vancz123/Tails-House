@@ -594,5 +594,4 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000); // Atualiza o relógio a cada 1 segundo
   // Intervalo do relógio a cada segundo
-  setInterval(updateClock, 1000);
 });
