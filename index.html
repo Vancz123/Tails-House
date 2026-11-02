@@ -9,24 +9,30 @@
   <!-- Font Awesome para Ícones -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Estilos CSS -->
+  <!-- Estilos CSS na pasta css/ -->
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Carrega o script.js no <head> com defer para executar sem precisar de script inline -->
+  <script src="js/script.js" defer></script>
 </head>
 
 <body>
 
-  <!-- Tela de Login (Simulação de Sessão) -->
+  <!-- Tela de Login (Modal por cima da app) -->
   <div id="loginScreen" class="overlay">
     <div class="card login-card">
       <div class="avatar-container">
-        <img src="image\Tails_think.jpg" alt="Miles Tails Prower" class="tails-avatar">
+        <!-- Imagem local conforme o layout exigido -->
+        <img src="image\Miles_Tails_Prower_Sonic_and_All-Stars_Racing_Transformed_1.webp" alt="Miles Tails Prower"
+          class="tails-avatar"
+          onerror="this.src='https://upload.wikimedia.org/wikipedia/en/b/b3/Tails_Sonic_the_Hedgehog.png'">
       </div>
       <h2><i class="fa-solid fa-gears"></i> Oficina do Tails</h2>
       <p>Introduz o teu nome para aceder ao Gestor de Tarefas:</p>
 
       <div class="login-form-box">
         <input type="text" id="usernameInput" placeholder="Ex: Miles Prower" required>
-        <button type="button" id="loginBtn" class="btn btn-primary" onclick="fazerLogin()">
+        <button type="button" id="loginBtn" class="btn btn-primary">
           <i class="fa-solid fa-right-to-bracket"></i> Entrar na Oficina
         </button>
       </div>
@@ -38,8 +44,8 @@
     <!-- Cabeçalho -->
     <header class="main-header">
       <div class="header-brand">
-        <img src="image\Miles_Tails_Prower_Sonic_and_All-Stars_Racing_Transformed_1.webp" alt="Tails Icon"
-          class="tails-logo">
+        <img src="image/Tails_think.jpg" alt="Tails Icon" class="tails-logo"
+          onerror="this.src='https://upload.wikimedia.org/wikipedia/en/b/b3/Tails_Sonic_the_Hedgehog.png'">
         <div>
           <h1>Tails' Workshop</h1>
           <p class="subtitle">Gestor de Tarefas Inteligente</p>
@@ -164,8 +170,6 @@
     </div>
   </div>
 
-  <!-- Script JS -->
-  <script src="js/script.js"></script>
 </body>
 
 </html>

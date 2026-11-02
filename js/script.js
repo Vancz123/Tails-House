@@ -1,19 +1,37 @@
 // ==========================================
-// OFICINA DO TAILS - SCRIPT REVISADO & CORRIGIDO
+// OFICINA DO TAILS - SCRIPT UNIFICADO & COMPLETO
+// (Sem necessidade de scripts inline no HTML)
 // ==========================================
 
-// ESTADO GLOBAL DA APLICAÇÃO
 let tasks = [];
 let currentUser = null;
 let currentFilter = 'all';
 
-// --- LEITURA / GRAVAÇÃO SEM JSON NO LOCALSTORAGE ---
+// ==========================================
+// 1. VERIFICAÇÃO CRÍTICA DE AUTENTICAÇÃO (Evita recarregamento duplo)
+// ==========================================
+(function checkCriticalAuthEarly() {
+  try {
+    const savedUser = localStorage.getItem('tails_user_raw');
+    if (savedUser && savedUser.trim() !== '') {
+      currentUser = savedUser.trim();
+      // Aplica imediatamente a propriedade para esconder o ecrã de login
+      document.documentElement.style.setProperty('--initial-login-display', 'none');
+    }
+  } catch (err) {
+    console.warn("LocalStorage inacessível na verificação inicial:", err);
+  }
+})();
+
+// ==========================================
+// 2. GESTÃO DE DADOS (SEM JSON NO LOCALSTORAGE)
+// ==========================================
 function getTasksFromStorage() {
   let rawData = null;
   try {
     rawData = localStorage.getItem('tails_tasks_raw');
   } catch (err) {
-    console.warn("LocalStorage bloqueado ou indisponível:", err);
+    console.warn("LocalStorage indisponível para leitura:", err);
   }
 
   if (!rawData || rawData.trim() === '') return [];
@@ -39,11 +57,13 @@ function saveTasksToStorage(tasksArray) {
   try {
     localStorage.setItem('tails_tasks_raw', rawData);
   } catch (err) {
-    console.warn("Não foi possível gravar no LocalStorage:", err);
+    console.warn("Erro ao gravar tarefas:", err);
   }
 }
 
-// --- FUNÇÃO DE AUTENTICAÇÃO E OCULTAÇÃO DA TELA DE LOGIN ---
+// ==========================================
+// 3. CONTROLO DE AUTENTICAÇÃO E INTERFACE
+// ==========================================
 function checkAuth() {
   const loginScreen = document.getElementById('loginScreen');
   const userGreetingText = document.getElementById('userGreetingText');
@@ -51,9 +71,7 @@ function checkAuth() {
 
   try {
     savedUser = localStorage.getItem('tails_user_raw');
-  } catch (err) {
-    console.warn("LocalStorage inacessível:", err);
-  }
+  } catch (err) {}
 
   currentUser = savedUser || currentUser;
 
@@ -73,7 +91,6 @@ function checkAuth() {
   }
 }
 
-// Funções expostas globalmente (window)
 window.fazerLogin = function() {
   const usernameInput = document.getElementById('usernameInput');
   const name = usernameInput ? usernameInput.value.trim() : '';
@@ -82,9 +99,7 @@ window.fazerLogin = function() {
     currentUser = name;
     try {
       localStorage.setItem('tails_user_raw', currentUser);
-    } catch (err) {
-      console.warn("Erro ao gravar utilizador:", err);
-    }
+    } catch (err) {}
     checkAuth();
   } else {
     alert("Por favor, introduz o teu nome para entrar na Oficina!");
@@ -125,13 +140,15 @@ function saveAndRender() {
   renderTasks();
 }
 
-// --- RENDERIZAÇÃO DAS TAREFAS ---
+// ==========================================
+// 4. RENDERIZAÇÃO E FILTRAGEM
+// ==========================================
 function renderTasks() {
   const taskList = document.getElementById('taskList');
   const emptyState = document.getElementById('emptyState');
   const countAll = document.getElementById('countAll');
   const countActive = document.getElementById('countActive');
-  countCompleted = document.getElementById('countCompleted');
+  const countCompleted = document.getElementById('countCompleted');
 
   const total = tasks.length;
   const completed = tasks.filter(t => t.completed).length;
@@ -188,7 +205,9 @@ function escapeHTML(str) {
   );
 }
 
-// --- CLIMA DA API ---
+// ==========================================
+// 5. INTEGRAÇÃO COM API EXTERNA
+// ==========================================
 async function fetchExternalAPI() {
   const apiContent = document.getElementById('apiContent');
   if (!apiContent) return;
@@ -209,7 +228,9 @@ async function fetchExternalAPI() {
   }
 }
 
-// --- MODO ESCURO / CLARO ---
+// ==========================================
+// 6. GESTÃO DE TEMA (CLARO / ESCURO)
+// ==========================================
 function initTheme() {
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   let savedTheme = 'dark';
@@ -228,17 +249,17 @@ function initTheme() {
   }
 }
 
-// --- EVENTOS INICIAIS ---
+// ==========================================
+// 7. INICIALIZAÇÃO E EVENTOS
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
   tasks = getTasksFromStorage();
 
-  // Associar Botão de Login via ID
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) {
     loginBtn.addEventListener('click', window.fazerLogin);
   }
 
-  // Permitir dar Enter no campo do utilizador
   const usernameInput = document.getElementById('usernameInput');
   if (usernameInput) {
     usernameInput.addEventListener('keydown', (e) => {
@@ -249,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Sair
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
@@ -262,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Alternar Tema
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
@@ -281,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Form de Criar Tarefa
   const taskForm = document.getElementById('taskForm');
   if (taskForm) {
     taskForm.addEventListener('submit', (e) => {
@@ -306,7 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Modal Fechar e Submeter Edição
   const closeModalBtn = document.getElementById('closeModalBtn');
   const editModal = document.getElementById('editModal');
   if (closeModalBtn && editModal) {
@@ -340,7 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Filtros
   const filterBtns = document.querySelectorAll('.filter-btn');
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -359,7 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Relógio
   const datetimeDisplay = document.getElementById('datetime');
   function updateClock() {
     if (!datetimeDisplay) return;
