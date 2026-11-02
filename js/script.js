@@ -52,7 +52,6 @@ let currentFilter = 'all';
 // 2. REFERÊNCIAS DO DOM
 // ==========================================
 const loginScreen = document.getElementById('loginScreen');
-const loginForm = document.getElementById('loginForm');
 const usernameInput = document.getElementById('usernameInput');
 const userGreetingText = document.getElementById('userGreetingText');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -135,7 +134,7 @@ if (themeToggleBtn) {
 }
 
 // ==========================================
-// 5. AUTENTICAÇÃO E SESSÃO (SEM RECARRAGAMENTO DE PÁGINA)
+// 5. AUTENTICAÇÃO E SESSÃO
 // ==========================================
 function checkAuth() {
   let savedUser = null;
@@ -148,29 +147,36 @@ function checkAuth() {
   currentUser = savedUser || currentUser;
 
   if (currentUser && currentUser.trim() !== '') {
-    if (loginScreen) loginScreen.classList.add('hidden');
+    if (loginScreen) {
+      loginScreen.style.display = 'none';
+      loginScreen.classList.add('hidden');
+    }
     if (userGreetingText) userGreetingText.textContent = `Olá, ${currentUser}!`;
   } else {
-    if (loginScreen) loginScreen.classList.remove('hidden');
+    if (loginScreen) {
+      loginScreen.style.display = 'flex';
+      loginScreen.classList.remove('hidden');
+    }
   }
 }
 
-if (loginForm) {
-  loginForm.addEventListener('submit', (e) => {
-    e.preventDefault(); // IMPEDE O RECARREGAMENTO DA PÁGINA NO GITHUB PAGES
-    
-    const username = usernameInput ? usernameInput.value.trim() : '';
-    if (username) {
-      currentUser = username;
-      try {
-        localStorage.setItem('tails_user_raw', currentUser);
-      } catch (err) {
-        console.warn("Não foi possível guardar o utilizador:", err);
-      }
-      checkAuth();
+// Função global de login chamada diretamente pelo botão
+window.fazerLogin = function() {
+  const input = document.getElementById('usernameInput');
+  const name = input ? input.value.trim() : '';
+  
+  if (name !== '') {
+    currentUser = name;
+    try {
+      localStorage.setItem('tails_user_raw', currentUser);
+    } catch (err) {
+      console.warn("Não foi possível guardar utilizador:", err);
     }
-  });
-}
+    checkAuth();
+  } else {
+    alert("Por favor, introduz o teu nome para entrar!");
+  }
+};
 
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
@@ -249,7 +255,6 @@ if (taskForm) {
   });
 }
 
-// Global scope binding for inline event listeners
 window.toggleTask = function(id) {
   tasks = tasks.map(task => {
     if (task.id === id) {
