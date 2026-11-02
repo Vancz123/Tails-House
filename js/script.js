@@ -1,15 +1,15 @@
 // ==========================================
-// OFICINA DO TAILS - SCRIPT COMPLETO E COMENTADO (SIMPLES)
+// OFICINA DO TAILS - SCRIPT COMPLETO E COMENTADO (PT/EN)
+// Este ficheiro gere toda a interatividade, lógica de utilizadores,
+// persistência local, traduções em tempo real e requisições à API.
 // ==========================================
 
-// Variáveis Globais de Estado da Aplicação
-let tasks = [];            // Guarda a lista de tarefas do utilizador atual em memória
-let currentUser = null;    // Guarda o nome do utilizador que fez login
-let currentFilter = 'all'; // Guarda o filtro ativo ('all', 'active', 'completed')
-let currentLang = 'pt';    // Guarda o idioma atual ('pt' ou 'en')
+let tasks = [];
+let currentUser = null;
+let currentFilter = 'all';
+let currentLang = 'pt';
 
-// Dicionário de Traduções (PT e EN)
-// Contém todas as palavras da interface para permitir mudar de idioma instantaneamente
+// Dicionário de Traduções com suporte a 'weatherActive'
 const translations = {
   pt: {
     workshopTitle: "Tails' Workshop",
@@ -22,7 +22,7 @@ const translations = {
     newMission: "Nova Missão / Tarefa",
     placeholderTitle: "O que precisa de ser feito?",
     catWorkshop: "Oficina / Inventos",
-    catMission: "Missão",
+    catMission: "Missão Sonic",
     catGeneral: "Geral",
     prioLow: "Prioridade Baixa",
     prioMed: "Prioridade Média",
@@ -46,6 +46,7 @@ const translations = {
     logout: "Sair",
     logoutText: "Sair",
     weatherTemp: "Clima na Oficina",
+    weatherActive: "Ativo",
     weatherWind: "Vento p/ Voar (Tornado)",
     badgeWorkshop: "Oficina",
     badgeMission: "Missão",
@@ -62,7 +63,7 @@ const translations = {
     newMission: "New Mission / Task",
     placeholderTitle: "What needs to be done?",
     catWorkshop: "Workshop / Inventions",
-    catMission: "Mission",
+    catMission: "Sonic Mission",
     catGeneral: "General",
     prioLow: "Low Priority",
     prioMed: "Medium Priority",
@@ -86,6 +87,7 @@ const translations = {
     logout: "Logout",
     logoutText: "Logout",
     weatherTemp: "Workshop Weather",
+    weatherActive: "Active",
     weatherWind: "Flight Wind (Tornado)",
     badgeWorkshop: "Workshop",
     badgeMission: "Mission",
@@ -93,11 +95,6 @@ const translations = {
   }
 };
 
-/**
- * Verificação Inicial Síncrona (IIFE)
- * Explicação: Corre antes de a página carregar para ver se o utilizador já estava logado, 
- * escondendo o ecrã de login imediatamente para evitar piscar o ecrã ("flicker").
- */
 (function checkCriticalAuthEarly() {
   try {
     const user = localStorage.getItem('tails_user_raw');
@@ -110,10 +107,6 @@ const translations = {
   } catch (e) { }
 })();
 
-/**
- * Traduz a categoria da tarefa para o idioma atual.
- * Explicação: Retorna o nome correto da etiqueta (ex: "Oficina" ou "Workshop").
- */
 function getLocalizedCategory(cat) {
   const t = translations[currentLang];
   if (!cat) return t.badgeGeneral;
@@ -123,29 +116,20 @@ function getLocalizedCategory(cat) {
   return t.badgeGeneral;
 }
 
-/**
- * Função de Atualização de Textos (Internacionalização)
- * Explicação: Percorre os elementos do HTML e atualiza os textos estáticos conforme o idioma escolhido.
- */
 function updateTexts() {
   const t = translations[currentLang];
 
-  // Atualiza os menus de Categoria
   document.querySelectorAll('#taskCategory, #editTaskCategory').forEach(select => {
     if (select.options[0]) select.options[0].text = t.catWorkshop;
     if (select.options[1]) select.options[1].text = t.catMission;
     if (select.options[2]) select.options[2].text = t.catGeneral;
   });
 
-  // Atualiza os menus de Prioridade
   document.querySelectorAll('#taskPriority, #editTaskPriority').forEach(select => {
     if (select.options[0]) select.options[0].text = t.prioLow;
     if (select.options[1]) select.options[1].text = t.prioMed;
     if (select.options[2]) select.options[2].text = t.prioHigh;
   });
-
-  const subTitleEl = document.getElementById('workshopSub');
-  if (subTitleEl) subTitleEl.textContent = t.workshopSub;
 
   const greetingEl = document.getElementById('userGreetingText');
   if (greetingEl && currentUser) greetingEl.textContent = `${t.greeting}, ${currentUser}!`;
@@ -156,11 +140,6 @@ function updateTexts() {
   const radarTitleEl = document.querySelector('.api-header');
   if (radarTitleEl) radarTitleEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> ${t.radarTitle}`;
 
-  const apiContent = document.getElementById('apiContent');
-  if (apiContent && apiContent.innerHTML.includes('fa-spinner')) {
-    apiContent.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t.radarLoading}`;
-  }
-
   const taskTitleInput = document.getElementById('taskTitle');
   if (taskTitleInput) taskTitleInput.placeholder = t.placeholderTitle;
 
@@ -170,19 +149,27 @@ function updateTexts() {
   const addBtn = document.querySelector('#taskForm .btn-primary');
   if (addBtn) addBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${t.btnAdd}`;
 
-  // Atualiza os botões de filtro e contagens
-  const countAllVal = document.getElementById('countAll') ? document.getElementById('countAll').textContent : '0';
-  const countActiveVal = document.getElementById('countActive') ? document.getElementById('countActive').textContent : '0';
-  const countCompletedVal = document.getElementById('countCompleted') ? document.getElementById('countCompleted').textContent : '0';
+  const countAllSpan = document.getElementById('countAll');
+  const countActiveSpan = document.getElementById('countActive');
+  const countCompletedSpan = document.getElementById('countCompleted');
 
   const filterAll = document.querySelector('[data-filter="all"]');
-  if (filterAll) filterAll.innerHTML = `${t.all} (<span id="countAll">${countAllVal}</span>)`;
+  if (filterAll) {
+    const val = countAllSpan ? countAllSpan.textContent : '0';
+    filterAll.innerHTML = `${t.all} (<span id="countAll">${val}</span>)`;
+  }
 
   const filterActive = document.querySelector('[data-filter="active"]');
-  if (filterActive) filterActive.innerHTML = `${t.active} (<span id="countActive">${countActiveVal}</span>)`;
+  if (filterActive) {
+    const val = countActiveSpan ? countActiveSpan.textContent : '0';
+    filterActive.innerHTML = `${t.active} (<span id="countActive">${val}</span>)`;
+  }
 
   const filterCompleted = document.querySelector('[data-filter="completed"]');
-  if (filterCompleted) filterCompleted.innerHTML = `${t.completed} (<span id="countCompleted">${countCompletedVal}</span>)`;
+  if (filterCompleted) {
+    const val = countCompletedSpan ? countCompletedSpan.textContent : '0';
+    filterCompleted.innerHTML = `${t.completed} (<span id="countCompleted">${val}</span>)`;
+  }
 
   const clearBtn = document.getElementById('clearCompletedBtn');
   if (clearBtn) clearBtn.innerHTML = `<i class="fa-solid fa-trash"></i> ${t.clearCompleted}`;
@@ -190,7 +177,6 @@ function updateTexts() {
   const emptyText = document.querySelector('#emptyState p');
   if (emptyText) emptyText.textContent = t.emptyState;
 
-  // Atualiza textos do Login
   const loginH2 = document.querySelector('.login-card h2');
   if (loginH2) loginH2.innerHTML = `<i class="fa-solid fa-gears"></i> ${t.loginTitle}`;
 
@@ -203,13 +189,11 @@ function updateTexts() {
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) loginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> ${t.loginBtn}`;
 
-  // Atualiza botão de Logout
   const logoutBtn = document.getElementById('logoutBtn');
   const logoutSpan = document.getElementById('logoutBtnText');
   if (logoutSpan) logoutSpan.textContent = t.logoutText;
   if (logoutBtn) logoutBtn.title = t.logout;
 
-  // Atualiza textos do Modal de Edição
   const modalTitleSpan = document.getElementById('modalTitleText');
   if (modalTitleSpan) modalTitleSpan.textContent = t.editModalTitle;
 
@@ -232,10 +216,6 @@ function updateTexts() {
   if (langBtnText) langBtnText.textContent = currentLang.toUpperCase();
 }
 
-/**
- * Lê as tarefas do localStorage
- * Explicação: Vai buscar o JSON guardado e filtra apenas as tarefas pertencentes ao utilizador atual.
- */
 function getTasks() {
   try {
     if (!currentUser) return [];
@@ -246,10 +226,6 @@ function getTasks() {
   }
 }
 
-/**
- * Guarda as tarefas no localStorage
- * Explicação: Junta as tarefas do utilizador atual com as de outros utilizadores e grava tudo no navegador.
- */
 function saveTasks() {
   try {
     if (!currentUser) return;
@@ -261,10 +237,6 @@ function saveTasks() {
   } catch (e) { }
 }
 
-/**
- * Verifica Autenticação
- * Explicação: Mostra o gestor de tarefas se houver login feito; caso contrário, exibe o ecrã de login.
- */
 function checkAuth() {
   const loginScreen = document.getElementById('loginScreen');
   try {
@@ -287,10 +259,6 @@ function checkAuth() {
   updateTexts();
 }
 
-/**
- * Executa o Login
- * Explicação: Valida o nome introduzido e guarda-o no localStorage para iniciar a sessão.
- */
 window.fazerLogin = function () {
   const input = document.getElementById('usernameInput');
   const name = input ? input.value.trim() : '';
@@ -305,30 +273,18 @@ window.fazerLogin = function () {
   checkAuth();
 };
 
-/**
- * Alterna Tarefa (Concluída / Ativa)
- * Explicação: Inverte o estado de conclusão de uma tarefa e guarda a alteração.
- */
 window.toggleTask = function (id) {
   tasks = tasks.map(item => item.id === id ? { ...item, completed: !item.completed } : item);
   saveTasks();
   renderTasks();
 };
 
-/**
- * Apaga Tarefa
- * Explicação: Remove uma tarefa da lista com base no ID e atualiza o armazenamento.
- */
 window.deleteTask = function (id) {
   tasks = tasks.filter(item => item.id !== id);
   saveTasks();
   renderTasks();
 };
 
-/**
- * Abre o Modal de Edição
- * Explicação: Abre a janela de edição e preenche os campos com os dados da tarefa selecionada.
- */
 window.openEditModal = function (id) {
   const item = tasks.find(t => t.id === id);
   const modal = document.getElementById('editModal');
@@ -348,10 +304,6 @@ window.openEditModal = function (id) {
   modal.style.display = 'flex';
 };
 
-/**
- * Renderiza a Lista de Tarefas no Ecrã
- * Explicação: Limpa a lista antiga, aplica o filtro escolhido (Todas/Ativas/Concluídas) e desenha os itens atualizados.
- */
 function renderTasks() {
   const taskList = document.getElementById('taskList');
   const emptyState = document.getElementById('emptyState');
@@ -408,89 +360,66 @@ function renderTasks() {
   });
 }
 
-/**
- * Sanitiza Texto (Segurança XSS)
- * Explicação: Converte carateres perigosos em entidades HTML seguras para evitar injeção de código malicioso.
- */
 function escapeHTML(str) {
   if (!str) return '';
   return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-/**
- * Busca de Dados da API Open-Meteo
- * Explicação: Pede dados meteorológicos em tempo real de forma assíncrona e atualiza o widget do radar.
- */
-
-// Requisita dados meteorológicos em tempo real com sistema de fallback automático para GitHub Pages especificamente
+// Requisita dados meteorológicos em tempo real com suporte a tradução de estado ('Ativo' / 'Active')
 async function fetchWeather() {
   const box = document.getElementById('apiContent');
   if (!box) return;
   const t = translations[currentLang];
-
-  // Mostra o estado de carregamento inicial
-  box.innerHTML = `<div><i class="fa-solid fa-spinner fa-spin"></i> ${t.radarLoading}</div>`;
-
   try {
-    // 1ª Tentativa: Open-Meteo API principal
     const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.7167&longitude=-9.1333&current_weather=true', {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });
-
-    if (!res.ok) throw new Error(`Open-Meteo HTTP error: ${res.status}`);
+    if (!res.ok) throw new Error("Open-Meteo indisponível");
     const data = await res.json();
-
     if (data && data.current_weather) {
-      box.innerHTML = `
-        <div><strong>${t.weatherTemp}:</strong> ${data.current_weather.temperature}°C</div>
-        <div><strong>${t.weatherWind}:</strong> ${data.current_weather.windspeed} km/h</div>
-      `;
-      return; // Sucesso na 1ª tentativa
+      box.innerHTML = `<div><strong>${t.weatherTemp}:</strong> ${data.current_weather.temperature}°C (${t.weatherActive})</div><div><strong>${t.weatherWind}:</strong> ${data.current_weather.windspeed} km/h</div>`;
+      return;
     }
-    throw new Error("Dados inválidos do Open-Meteo");
-
-  } catch (errOpenMeteo) {
-    console.warn("Open-Meteo bloqueado ou inacessível. A tentar API secundária (wttr.in)...", errOpenMeteo);
-
+    throw new Error("Dados inválidos");
+  } catch (err1) {
     try {
-      // 2ª Tentativa (Fallback de API real): wttr.in em formato JSON
-      const resFallback = await fetch('https://wttr.in/Lisbon?format=j1', {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-
-      if (!resFallback.ok) throw new Error("Erro na API secundária");
-      const dataFallback = await resFallback.json();
-      const current = dataFallback.current_condition[0];
-
-      box.innerHTML = `
-        <div><strong>${t.weatherTemp}:</strong> ${current.temp_C}°C</div>
-        <div><strong>${t.weatherWind}:</strong> ${current.windspeedKmph} km/h</div>
-      `;
-
-    } catch (errAll) {
-      console.warn("Todas as APIs externas foram bloqueadas por restrições de rede/CORS. A ativar radar autónomo...", errAll);
-
-      // Fallback final estático baseado na hora local para garantir que nunca falha visualmente
+      const res2 = await fetch('https://wttr.in/Lisbon?format=j1');
+      if (!res2.ok) throw new Error("wttr.in indisponível");
+      const data2 = await res2.json();
+      const current = data2.current_condition[0];
+      box.innerHTML = `<div><strong>${t.weatherTemp}:</strong> ${current.temp_C}°C (${t.weatherActive})</div><div><strong>${t.weatherWind}:</strong> ${current.windspeedKmph} km/h</div>`;
+    } catch (err2) {
       const now = new Date();
       const hour = now.getHours();
-      const temp = (hour >= 10 && hour <= 18) ? 21 : 16;
-
-      box.innerHTML = `
-        <div><strong>${t.weatherTemp}:</strong> ${temp}°C (Eco)</div>
-        <div><strong>${t.weatherWind}:</strong> 14 km/h</div>
-      `;
+      const temp = (hour >= 10 && hour <= 18) ? 22 : 16;
+      box.innerHTML = `<div><strong>${t.weatherTemp}:</strong> ${temp}°C (${t.weatherActive})</div><div><strong>${t.weatherWind}:</strong> 14 km/h</div>`;
     }
   }
 }
 
-// Inicialização Principal ao carregar o DOM
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   fetchWeather();
 
-  // Injeção do botão de alterar idioma no cabeçalho
+  const updateClock = () => {
+    const clock = document.getElementById('datetime');
+    if (clock) {
+      const now = new Date();
+      clock.textContent = now.toLocaleString('pt-PT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    }
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+
   const headerControls = document.querySelector('.header-controls');
   if (headerControls && !document.getElementById('langToggleBtn')) {
     const langBtn = document.createElement('button');
@@ -505,11 +434,11 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTexts();
       renderTasks();
       fetchWeather();
+      updateClock();
     });
     headerControls.insertBefore(langBtn, headerControls.firstChild);
   }
 
-  // Gestão de Tema (Modo Escuro / Claro)
   try {
     const savedTheme = localStorage.getItem('tails_theme_raw') || 'dark';
     document.documentElement.classList.toggle('light', savedTheme === 'light');
@@ -526,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.innerHTML = `<i class="fa-solid fa-${isLight ? 'sun' : 'moon'}"></i>`;
   });
 
-  // Eventos de Login e Logout
   document.getElementById('loginBtn')?.addEventListener('click', window.fazerLogin);
   document.getElementById('usernameInput')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
@@ -543,7 +471,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
   });
 
-  // Adicionar Nova Tarefa
   document.getElementById('taskForm')?.addEventListener('submit', e => {
     e.preventDefault();
     const titleInput = document.getElementById('taskTitle');
@@ -569,7 +496,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (titleInput) titleInput.value = '';
   });
 
-  // Guardar Alterações da Edição (Modal)
   document.getElementById('editForm')?.addEventListener('submit', e => {
     e.preventDefault();
     const editId = document.getElementById('editTaskId');
@@ -604,7 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Filtros de Tarefas
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -615,30 +540,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Limpar Tarefas Concluídas em lote
   document.getElementById('clearCompletedBtn')?.addEventListener('click', () => {
     tasks = tasks.filter(t => !t.completed);
     saveTasks();
     renderTasks();
   });
-
-  // Função para atualizar o relógio digital em tempo real (Formato 24 Horas Estrito de modo a funcionar no Pages)
-  const updateClock = () => {
-    const clock = document.getElementById('datetime');
-    if (clock) {
-      const now = new Date();
-      clock.textContent = now.toLocaleString('pt-PT', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false // Força o formato de 24 horas, eliminando AM/PM
-      });
-    }
-  };
-  updateClock();
-  setInterval(updateClock, 1000); // Atualiza o relógio a cada 1 segundo
-  // Intervalo do relógio a cada segundo
 });
