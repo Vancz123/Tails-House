@@ -421,19 +421,27 @@ function escapeHTML(str) {
  * Busca de Dados da API Open-Meteo
  * Explicação: Pede dados meteorológicos em tempo real de forma assíncrona e atualiza o widget do radar.
  */
+// Requisita dados meteorológicos em tempo real através da API pública Open-Meteo
 async function fetchWeather() {
   const box = document.getElementById('apiContent');
   if (!box) return;
   const t = translations[currentLang];
   try {
-    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.7167&longitude=-9.1333&current_weather=true');
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.7167&longitude=-9.1333&current_weather=true', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
     if (data && data.current_weather) {
       box.innerHTML = `<div><strong>${t.weatherTemp}:</strong> ${data.current_weather.temperature}°C</div><div><strong>${t.weatherWind}:</strong> ${data.current_weather.windspeed} km/h</div>`;
     } else {
-      throw new Error("Invalid weather data");
+      throw new Error("Dados inválidos");
     }
   } catch (e) {
+    console.error("Erro ao carregar API Open-Meteo:", e);
     box.innerHTML = `<div><i class="fa-solid fa-triangle-exclamation"></i> ${t.radarOffline}</div>`;
   }
 }
