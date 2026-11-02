@@ -1,13 +1,15 @@
 // ==========================================
-// OFICINA DO TAILS - SCRIPT DEFINITIVO (PT/EN + JSON + OPEN-METEO)
+// OFICINA DO TAILS - SCRIPT COMPLETO E COMENTADO (SIMPLES)
 // ==========================================
 
-let tasks = [];
-let currentUser = null;
-let currentFilter = 'all';
-let currentLang = 'pt';
+// Variáveis Globais de Estado da Aplicação
+let tasks = [];            // Guarda a lista de tarefas do utilizador atual em memória
+let currentUser = null;    // Guarda o nome do utilizador que fez login
+let currentFilter = 'all'; // Guarda o filtro ativo ('all', 'active', 'completed')
+let currentLang = 'pt';    // Guarda o idioma atual ('pt' ou 'en')
 
-// Dicionário de Traduções Completo
+// Dicionário de Traduções (PT e EN)
+// Contém todas as palavras da interface para permitir mudar de idioma instantaneamente
 const translations = {
   pt: {
     workshopTitle: "Tails' Workshop",
@@ -91,6 +93,11 @@ const translations = {
   }
 };
 
+/**
+ * Verificação Inicial Síncrona (IIFE)
+ * Explicação: Corre antes de a página carregar para ver se o utilizador já estava logado, 
+ * escondendo o ecrã de login imediatamente para evitar piscar o ecrã ("flicker").
+ */
 (function checkCriticalAuthEarly() {
   try {
     const user = localStorage.getItem('tails_user_raw');
@@ -103,6 +110,10 @@ const translations = {
   } catch (e) { }
 })();
 
+/**
+ * Traduz a categoria da tarefa para o idioma atual.
+ * Explicação: Retorna o nome correto da etiqueta (ex: "Oficina" ou "Workshop").
+ */
 function getLocalizedCategory(cat) {
   const t = translations[currentLang];
   if (!cat) return t.badgeGeneral;
@@ -112,17 +123,21 @@ function getLocalizedCategory(cat) {
   return t.badgeGeneral;
 }
 
+/**
+ * Função de Atualização de Textos (Internacionalização)
+ * Explicação: Percorre os elementos do HTML e atualiza os textos estáticos conforme o idioma escolhido.
+ */
 function updateTexts() {
   const t = translations[currentLang];
 
-  // Selects de Categoria
+  // Atualiza os menus de Categoria
   document.querySelectorAll('#taskCategory, #editTaskCategory').forEach(select => {
     if (select.options[0]) select.options[0].text = t.catWorkshop;
     if (select.options[1]) select.options[1].text = t.catMission;
     if (select.options[2]) select.options[2].text = t.catGeneral;
   });
 
-  // Selects de Prioridade
+  // Atualiza os menus de Prioridade
   document.querySelectorAll('#taskPriority, #editTaskPriority').forEach(select => {
     if (select.options[0]) select.options[0].text = t.prioLow;
     if (select.options[1]) select.options[1].text = t.prioMed;
@@ -155,7 +170,7 @@ function updateTexts() {
   const addBtn = document.querySelector('#taskForm .btn-primary');
   if (addBtn) addBtn.innerHTML = `<i class="fa-solid fa-plus"></i> ${t.btnAdd}`;
 
-  // Botões de Filtro
+  // Atualiza os botões de filtro e contagens
   const countAllVal = document.getElementById('countAll') ? document.getElementById('countAll').textContent : '0';
   const countActiveVal = document.getElementById('countActive') ? document.getElementById('countActive').textContent : '0';
   const countCompletedVal = document.getElementById('countCompleted') ? document.getElementById('countCompleted').textContent : '0';
@@ -175,6 +190,7 @@ function updateTexts() {
   const emptyText = document.querySelector('#emptyState p');
   if (emptyText) emptyText.textContent = t.emptyState;
 
+  // Atualiza textos do Login
   const loginH2 = document.querySelector('.login-card h2');
   if (loginH2) loginH2.innerHTML = `<i class="fa-solid fa-gears"></i> ${t.loginTitle}`;
 
@@ -187,12 +203,13 @@ function updateTexts() {
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) loginBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> ${t.loginBtn}`;
 
+  // Atualiza botão de Logout
   const logoutBtn = document.getElementById('logoutBtn');
   const logoutSpan = document.getElementById('logoutBtnText');
   if (logoutSpan) logoutSpan.textContent = t.logoutText;
   if (logoutBtn) logoutBtn.title = t.logout;
 
-  // Atualizar textos do Modal de Edição
+  // Atualiza textos do Modal de Edição
   const modalTitleSpan = document.getElementById('modalTitleText');
   if (modalTitleSpan) modalTitleSpan.textContent = t.editModalTitle;
 
@@ -215,6 +232,10 @@ function updateTexts() {
   if (langBtnText) langBtnText.textContent = currentLang.toUpperCase();
 }
 
+/**
+ * Lê as tarefas do localStorage
+ * Explicação: Vai buscar o JSON guardado e filtra apenas as tarefas pertencentes ao utilizador atual.
+ */
 function getTasks() {
   try {
     if (!currentUser) return [];
@@ -225,6 +246,10 @@ function getTasks() {
   }
 }
 
+/**
+ * Guarda as tarefas no localStorage
+ * Explicação: Junta as tarefas do utilizador atual com as de outros utilizadores e grava tudo no navegador.
+ */
 function saveTasks() {
   try {
     if (!currentUser) return;
@@ -236,6 +261,10 @@ function saveTasks() {
   } catch (e) { }
 }
 
+/**
+ * Verifica Autenticação
+ * Explicação: Mostra o gestor de tarefas se houver login feito; caso contrário, exibe o ecrã de login.
+ */
 function checkAuth() {
   const loginScreen = document.getElementById('loginScreen');
   try {
@@ -258,6 +287,10 @@ function checkAuth() {
   updateTexts();
 }
 
+/**
+ * Executa o Login
+ * Explicação: Valida o nome introduzido e guarda-o no localStorage para iniciar a sessão.
+ */
 window.fazerLogin = function () {
   const input = document.getElementById('usernameInput');
   const name = input ? input.value.trim() : '';
@@ -272,18 +305,30 @@ window.fazerLogin = function () {
   checkAuth();
 };
 
+/**
+ * Alterna Tarefa (Concluída / Ativa)
+ * Explicação: Inverte o estado de conclusão de uma tarefa e guarda a alteração.
+ */
 window.toggleTask = function (id) {
   tasks = tasks.map(item => item.id === id ? { ...item, completed: !item.completed } : item);
   saveTasks();
   renderTasks();
 };
 
+/**
+ * Apaga Tarefa
+ * Explicação: Remove uma tarefa da lista com base no ID e atualiza o armazenamento.
+ */
 window.deleteTask = function (id) {
   tasks = tasks.filter(item => item.id !== id);
   saveTasks();
   renderTasks();
 };
 
+/**
+ * Abre o Modal de Edição
+ * Explicação: Abre a janela de edição e preenche os campos com os dados da tarefa selecionada.
+ */
 window.openEditModal = function (id) {
   const item = tasks.find(t => t.id === id);
   const modal = document.getElementById('editModal');
@@ -303,6 +348,10 @@ window.openEditModal = function (id) {
   modal.style.display = 'flex';
 };
 
+/**
+ * Renderiza a Lista de Tarefas no Ecrã
+ * Explicação: Limpa a lista antiga, aplica o filtro escolhido (Todas/Ativas/Concluídas) e desenha os itens atualizados.
+ */
 function renderTasks() {
   const taskList = document.getElementById('taskList');
   const emptyState = document.getElementById('emptyState');
@@ -359,11 +408,19 @@ function renderTasks() {
   });
 }
 
+/**
+ * Sanitiza Texto (Segurança XSS)
+ * Explicação: Converte carateres perigosos em entidades HTML seguras para evitar injeção de código malicioso.
+ */
 function escapeHTML(str) {
   if (!str) return '';
   return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
+/**
+ * Busca de Dados da API Open-Meteo
+ * Explicação: Pede dados meteorológicos em tempo real de forma assíncrona e atualiza o widget do radar.
+ */
 async function fetchWeather() {
   const box = document.getElementById('apiContent');
   if (!box) return;
@@ -381,11 +438,12 @@ async function fetchWeather() {
   }
 }
 
+// Inicialização Principal ao carregar o DOM
 document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   fetchWeather();
 
-  // Atualização imediata do relógio ao carregar
+  // Relógio em tempo real
   const updateClock = () => {
     const clock = document.getElementById('datetime');
     if (clock) {
@@ -396,8 +454,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   updateClock();
-  setInterval(updateClock, 1000);
 
+  // Injeção do botão de alterar idioma no cabeçalho
   const headerControls = document.querySelector('.header-controls');
   if (headerControls && !document.getElementById('langToggleBtn')) {
     const langBtn = document.createElement('button');
@@ -412,11 +470,11 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTexts();
       renderTasks();
       fetchWeather();
-      updateClock();
     });
     headerControls.insertBefore(langBtn, headerControls.firstChild);
   }
 
+  // Gestão de Tema (Modo Escuro / Claro)
   try {
     const savedTheme = localStorage.getItem('tails_theme_raw') || 'dark';
     document.documentElement.classList.toggle('light', savedTheme === 'light');
@@ -433,6 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.innerHTML = `<i class="fa-solid fa-${isLight ? 'sun' : 'moon'}"></i>`;
   });
 
+  // Eventos de Login e Logout
   document.getElementById('loginBtn')?.addEventListener('click', window.fazerLogin);
   document.getElementById('usernameInput')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
@@ -449,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
   });
 
+  // Adicionar Nova Tarefa
   document.getElementById('taskForm')?.addEventListener('submit', e => {
     e.preventDefault();
     const titleInput = document.getElementById('taskTitle');
@@ -474,6 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (titleInput) titleInput.value = '';
   });
 
+  // Guardar Alterações da Edição (Modal)
   document.getElementById('editForm')?.addEventListener('submit', e => {
     e.preventDefault();
     const editId = document.getElementById('editTaskId');
@@ -508,6 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Filtros de Tarefas
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -518,9 +580,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Limpar Tarefas Concluídas em lote
   document.getElementById('clearCompletedBtn')?.addEventListener('click', () => {
     tasks = tasks.filter(t => !t.completed);
     saveTasks();
     renderTasks();
   });
+
+  // Intervalo do relógio a cada segundo
+  setInterval(updateClock, 1000);
 });
