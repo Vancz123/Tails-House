@@ -423,8 +423,6 @@ function escapeHTML(str) {
  */
 
 // Requisita dados meteorológicos em tempo real com sistema de fallback automático para GitHub Pages especificamente
-// Radar da Oficina autónomo e resistente a bloqueios de rede no GitHub Pages
-// Requisita dados meteorológicos reais via API com fallback duplo automático
 async function fetchWeather() {
   const box = document.getElementById('apiContent');
   if (!box) return;
