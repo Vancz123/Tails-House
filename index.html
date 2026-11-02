@@ -4,48 +4,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Oficina do Tails - Gestor de Tarefas Inteligente</title>
+  <title>Oficina do Tails - Terminal de Missões & Inventos</title>
 
-  <!-- Font Awesome para Ícones -->
+  <!-- Font Awesome para Ícones Avançados -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Estilos CSS na pasta css/ -->
+  <!-- Google Fonts Estilo Tech/Futurista -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Estilos CSS -->
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- Carrega o script.js no <head> com defer para executar sem precisar de script inline -->
+  <!-- Script Principal com carregamento otimizado no head -->
   <script src="js/script.js" defer></script>
 </head>
 
-<body>
+<body class="tails-workshop-bg">
 
-  <!-- Tela de Login (Modal por cima da app) -->
+  <!-- Ecrã de Login / Autenticação Estilo Terminal do Tails -->
   <div id="loginScreen" class="overlay">
-    <div class="card login-card">
+    <div class="card login-card tech-border">
+      <div class="radar-scanner-ring"></div>
       <div class="avatar-container">
-        <!-- Imagem local conforme o layout exigido -->
+        <!-- Imagem local conforme o layout exigido no projeto inicial -->
         <img src="image\Miles_Tails_Prower_Sonic_and_All-Stars_Racing_Transformed_1.webp" alt="Miles Tails Prower"
-          class="tails-avatar"
+          class="tails-avatar glow-effect"
           onerror="this.src='https://upload.wikimedia.org/wikipedia/en/b/b3/Tails_Sonic_the_Hedgehog.png'">
       </div>
-      <h2><i class="fa-solid fa-gears"></i> Oficina do Tails</h2>
-      <p>Introduz o teu nome para aceder ao Gestor de Tarefas:</p>
+      <h2><i class="fa-solid fa-microchip"></i> Oficina do Tails</h2>
+      <p class="subtitle-login">Introduz o teu nome para aceder ao Gestor de Tarefas:</p>
 
       <div class="login-form-box">
         <input type="text" id="usernameInput" placeholder="Ex: Miles Prower" required>
-        <button type="button" id="loginBtn" class="btn btn-primary">
+        <button type="button" id="loginBtn" class="btn btn-primary btn-tech">
           <i class="fa-solid fa-right-to-bracket"></i> Entrar na Oficina
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Aplicação Principal -->
+  <!-- Contentor Principal da Aplicação -->
   <div class="app-container">
-    <!-- Cabeçalho -->
-    <header class="main-header">
+
+    <!-- Cabeçalho Tecnológico -->
+    <header class="main-header card tech-border-header">
       <div class="header-brand">
-        <img src="image/Tails_think.jpg" alt="Tails Icon" class="tails-logo"
-          onerror="this.src='https://upload.wikimedia.org/wikipedia/en/b/b3/Tails_Sonic_the_Hedgehog.png'">
+        <div class="logo-pulse-wrapper">
+          <img src="image/Tails_think.jpg" alt="Tails Icon" class="tails-logo"
+            onerror="this.src='https://upload.wikimedia.org/wikipedia/en/b/b3/Tails_Sonic_the_Hedgehog.png'">
+        </div>
         <div>
           <h1>Tails' Workshop</h1>
           <p class="subtitle">Gestor de Tarefas Inteligente</p>
@@ -53,7 +62,7 @@
       </div>
 
       <div class="header-controls">
-        <div class="datetime-display">
+        <div class="datetime-display tech-badge-clock">
           <i class="fa-regular fa-clock"></i>
           <span id="datetime">--:--:--</span>
         </div>
@@ -68,13 +77,15 @@
 
     <!-- Barra de Boas-Vindas e API Status -->
     <section class="welcome-bar">
-      <div class="user-greeting">
-        <h2><span id="userGreetingText">Olá, Utilizador!</span> <i class="fa-solid fa-wrench"></i></h2>
-        <p>Pronto para organizar os teus inventos e missões hoje?</p>
+      <div class="card user-greeting-card">
+        <div class="user-greeting">
+          <h2><span id="userGreetingText">Olá, Utilizador!</span> <i class="fa-solid fa-wrench"></i></h2>
+          <p>Pronto para organizar os teus inventos e missões hoje?</p>
+        </div>
       </div>
 
       <!-- Widget de Conexão com API -->
-      <div class="api-widget" id="apiWidget">
+      <div class="api-widget card" id="apiWidget">
         <div class="api-header">
           <i class="fa-solid fa-satellite-dish"></i> Radar da Oficina (API Open-Meteo)
         </div>
@@ -86,6 +97,7 @@
 
     <!-- Layout Principal -->
     <main class="main-content">
+
       <!-- Formulário para Criar Tarefa -->
       <section class="card form-card">
         <h3><i class="fa-solid fa-plus"></i> Nova Missão / Tarefa</h3>
@@ -108,13 +120,13 @@
                 <option value="alta">Prioridade Alta</option>
               </select>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Adicionar</button>
+            <button type="submit" class="btn btn-primary btn-tech"><i class="fa-solid fa-plus"></i> Adicionar</button>
           </div>
         </form>
       </section>
 
       <!-- Painel de Filtros e Contadores -->
-      <section class="controls-section">
+      <section class="controls-section card controls-card">
         <div class="filters">
           <button class="filter-btn active" data-filter="all">Todas (<span id="countAll">0</span>)</button>
           <button class="filter-btn" data-filter="active">Ativas (<span id="countActive">0</span>)</button>
@@ -126,7 +138,7 @@
       </section>
 
       <!-- Lista de Tarefas -->
-      <section class="tasks-container">
+      <section class="tasks-container card list-card">
         <ul id="taskList" class="task-list"></ul>
         <div id="emptyState" class="empty-state">
           <i class="fa-solid fa-clipboard-check"></i>
@@ -138,7 +150,7 @@
 
   <!-- Modal para Edição de Tarefas -->
   <div id="editModal" class="overlay hidden">
-    <div class="card modal-card">
+    <div class="card modal-card tech-border">
       <h3><i class="fa-solid fa-pen-to-square"></i> Editar Tarefa</h3>
       <form id="editForm">
         <input type="hidden" id="editTaskId">

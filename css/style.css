@@ -1,62 +1,132 @@
 :root {
-  --bg-color: #0f172a;
-  --card-bg: #1e293b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  
-  --primary-color: #f59e0b;
-  --primary-hover: #d97706;
-  --sonic-blue: #3b82f6;
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  
-  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-  --radius: 12px;
-  --transition: all 0.3s ease;
+  --bg-color: #050b1a;
+  --bg-gradient: linear-gradient(135deg, #050b1a 0%, #0c1a36 100%);
+  --card-bg: rgba(12, 26, 54, 0.85);
+  --text-main: #ffffff;
+  --text-muted: #94b2e5;
+  --border-color: #1e3a75;
+
+  --primary-color: #ffcc00;
+  --primary-hover: #e6b800;
+  --sonic-blue: #0055ff;
+  --sonic-light-blue: #3385ff;
+  --success-color: #00cc66;
+  --danger-color: #ff3333;
+
+  --shadow: 0 10px 30px rgba(0, 85, 255, 0.35);
+  --radius: 6px;
+  --transition: all 0.2s ease-in-out;
 }
 
 html.light {
-  --bg-color: #f1f5f9;
-  --card-bg: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
-  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  --bg-color: #d0e4ff;
+  --bg-gradient: linear-gradient(135deg, #d0e4ff 0%, #80b3ff 100%);
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --text-main: #061938;
+  --text-muted: #3a629b;
+  --border-color: #4da6ff;
+  --shadow: 0 10px 30px rgba(0, 85, 255, 0.2);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Orbitron', 'Segoe UI', Tahoma, sans-serif;
 }
 
-body {
-  background-color: var(--bg-color);
+/* Página toda com transição fluida de cor/gradiente (Modo Escuro e Claro por completo) */
+body.tails-workshop-bg {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text-main);
   min-height: 100vh;
-  transition: var(--transition);
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  padding: 25px;
+  position: relative;
+  overflow-x: hidden;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* SA2 Style Dynamic Background Waves / Grid Lines */
+body.tails-workshop-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(0, 85, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 85, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: -2;
+  pointer-events: none;
+}
+
+body.tails-workshop-bg::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 85, 255, 0.25) 0%, transparent 70%);
+  z-index: -1;
+  animation: sa2Waves 10s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes sa2Waves {
+  0% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-25%) translateY(-8px);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .app-container {
   width: 100%;
   max-width: 900px;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  z-index: 1;
 }
 
 .card {
   background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius);
   padding: 20px;
   box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
   transition: var(--transition);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--primary-color), var(--sonic-blue));
+}
+
+.tech-border-header {
+  border-top: 3px solid var(--primary-color);
 }
 
 .main-header {
@@ -65,8 +135,6 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 15px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--border-color);
 }
 
 .header-brand {
@@ -75,35 +143,41 @@ body {
   gap: 15px;
 }
 
-.tails-logo {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5));
+.tails-logo,
+.tails-avatar {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
 }
 
 .header-brand h1 {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 
 .subtitle {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .datetime-display {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: bold;
-  background-color: var(--border-color);
-  padding: 8px 14px;
-  border-radius: 20px;
+  background-color: rgba(0, 85, 255, 0.2);
+  border: 1px solid var(--sonic-blue);
+  padding: 8px 12px;
+  border-radius: var(--radius);
   color: var(--text-main);
 }
 
@@ -121,20 +195,19 @@ body {
 
 .user-greeting h2 {
   color: var(--primary-color);
+  font-size: 1.1rem;
   margin-bottom: 5px;
 }
 
 .user-greeting p {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .api-widget {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(59, 130, 246, 0.1));
-  border: 1px solid var(--primary-color);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  font-size: 0.85rem;
+  background: linear-gradient(135deg, rgba(0, 85, 255, 0.2), rgba(255, 204, 0, 0.05));
+  border: 1px solid var(--sonic-blue);
+  font-size: 0.8rem;
 }
 
 .api-header {
@@ -146,7 +219,8 @@ body {
 .form-card h3 {
   margin-bottom: 15px;
   color: var(--primary-color);
-  font-size: 1.1rem;
+  font-size: 1rem;
+  text-transform: uppercase;
 }
 
 .form-group {
@@ -160,31 +234,43 @@ body {
   flex-wrap: wrap;
 }
 
-input[type="text"], select {
+input[type="text"],
+select {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 1px solid var(--border-color);
-  background-color: var(--bg-color);
+  background-color: rgba(0, 0, 0, 0.35);
   color: var(--text-main);
   outline: none;
   transition: var(--transition);
+  font-size: 0.9rem;
 }
 
-input[type="text"]:focus, select:focus {
+html.light input[type="text"],
+html.light select {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+input[type="text"]:focus,
+select:focus {
   border-color: var(--primary-color);
+  box-shadow: 0 0 12px rgba(255, 204, 0, 0.4);
 }
 
 .btn {
   padding: 10px 18px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: none;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: bold;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   transition: var(--transition);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
 }
 
 .btn-primary {
@@ -193,7 +279,8 @@ input[type="text"]:focus, select:focus {
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
+  background-color: #ffd633;
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
 }
 
 .btn-outline {
@@ -227,7 +314,7 @@ input[type="text"]:focus, select:focus {
 
 .btn-sm {
   padding: 6px 12px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .controls-section {
@@ -245,19 +332,22 @@ input[type="text"]:focus, select:focus {
 
 .filter-btn {
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: var(--radius);
   border: 1px solid var(--border-color);
-  background-color: var(--card-bg);
+  background-color: rgba(255, 255, 255, 0.03);
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
   transition: var(--transition);
 }
 
-.filter-btn.active, .filter-btn:hover {
-  background-color: var(--primary-color);
-  color: #000;
-  font-weight: bold;
+.filter-btn.active,
+.filter-btn:hover {
+  background-color: var(--sonic-blue);
+  color: #fff;
+  border-color: var(--sonic-light-blue);
+  box-shadow: 0 0 12px rgba(0, 85, 255, 0.6);
 }
 
 .task-list {
@@ -271,19 +361,28 @@ input[type="text"]:focus, select:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
-  background-color: var(--card-bg);
+  padding: 12px 16px;
+  background-color: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  border-left: 5px solid var(--primary-color);
+  border-left: 5px solid var(--sonic-blue);
   transition: var(--transition);
 }
 
-.task-item.priority-alta { border-left-color: var(--danger-color); }
-.task-item.priority-baixa { border-left-color: var(--success-color); }
+html.light .task-item {
+  background-color: rgba(0, 85, 255, 0.04);
+}
+
+.task-item.priority-alta {
+  border-left-color: var(--danger-color);
+}
+
+.task-item.priority-baixa {
+  border-left-color: var(--success-color);
+}
 
 .task-item.completed {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .task-item.completed .task-title {
@@ -297,9 +396,10 @@ input[type="text"]:focus, select:focus {
 }
 
 .checkbox-custom {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
+  accent-color: var(--primary-color);
 }
 
 .task-details {
@@ -309,16 +409,17 @@ input[type="text"]:focus, select:focus {
 }
 
 .task-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
 .task-badge {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   padding: 2px 8px;
-  border-radius: 10px;
-  background-color: var(--border-color);
-  color: var(--text-muted);
+  border-radius: 3px;
+  background-color: rgba(0, 85, 255, 0.25);
+  color: var(--sonic-light-blue);
+  border: 1px solid rgba(0, 85, 255, 0.5);
   width: fit-content;
 }
 
@@ -329,12 +430,12 @@ input[type="text"]:focus, select:focus {
 
 .empty-state {
   text-align: center;
-  padding: 40px;
+  padding: 30px;
   color: var(--text-muted);
 }
 
 .empty-state i {
-  font-size: 3rem;
+  font-size: 2.5rem;
   margin-bottom: 10px;
   color: var(--border-color);
 }
@@ -345,7 +446,7 @@ input[type="text"]:focus, select:focus {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(2, 6, 15, 0.92);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -353,10 +454,17 @@ input[type="text"]:focus, select:focus {
   padding: 20px;
 }
 
-.login-card, .modal-card {
+html.light .overlay {
+  background-color: rgba(100, 150, 220, 0.85);
+}
+
+.login-card,
+.modal-card {
   max-width: 420px;
   width: 100%;
   text-align: center;
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 0 35px rgba(255, 204, 0, 0.3);
 }
 
 .avatar-container {
@@ -364,9 +472,8 @@ input[type="text"]:focus, select:focus {
 }
 
 .tails-avatar {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
+  width: 100px;
+  height: 100px;
 }
 
 .login-form-box {
@@ -385,7 +492,4 @@ input[type="text"]:focus, select:focus {
 
 .hidden {
   display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
 }
