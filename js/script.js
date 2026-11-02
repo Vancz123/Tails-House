@@ -424,36 +424,67 @@ function escapeHTML(str) {
 
 // Requisita dados meteorológicos em tempo real com sistema de fallback automático para GitHub Pages especificamente
 // Radar da Oficina autónomo e resistente a bloqueios de rede no GitHub Pages
+// Requisita dados meteorológicos reais via API com fallback duplo automático
 async function fetchWeather() {
   const box = document.getElementById('apiContent');
   if (!box) return;
   const t = translations[currentLang];
 
-  // Simula um breve atraso de ligação aos radares para manter o efeito visual imersivo
+  // Mostra o estado de carregamento inicial
   box.innerHTML = `<div><i class="fa-solid fa-spinner fa-spin"></i> ${t.radarLoading}</div>`;
 
-  setTimeout(() => {
+  try {
+    // 1ª Tentativa: Open-Meteo API principal
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.7167&longitude=-9.1333&current_weather=true', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`Open-Meteo HTTP error: ${res.status}`);
+    const data = await res.json();
+
+    if (data && data.current_weather) {
+      box.innerHTML = `
+        <div><strong>${t.weatherTemp}:</strong> ${data.current_weather.temperature}°C</div>
+        <div><strong>${t.weatherWind}:</strong> ${data.current_weather.windspeed} km/h</div>
+      `;
+      return; // Sucesso na 1ª tentativa
+    }
+    throw new Error("Dados inválidos do Open-Meteo");
+
+  } catch (errOpenMeteo) {
+    console.warn("Open-Meteo bloqueado ou inacessível. A tentar API secundária (wttr.in)...", errOpenMeteo);
+
     try {
-      // Gera temperatura e vento dinâmicos baseados na hora real do sistema
-      const now = new Date();
-      const hour = now.getHours();
+      // 2ª Tentativa (Fallback de API real): wttr.in em formato JSON
+      const resFallback = await fetch('https://wttr.in/Lisbon?format=j1', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
 
-      // Variação térmica realista para Lisboa (mais quente a meio do dia, mais fresco de manhã/noite)
-      let temp = 20;
-      if (hour >= 6 && hour < 12) temp = 17 + (hour - 6);
-      else if (hour >= 12 && hour < 18) temp = 23 - (hour - 12) * 0.5;
-      else temp = 15;
-
-      const wind = 12 + (hour % 5); // Vento simulado estável para testes de voo
+      if (!resFallback.ok) throw new Error("Erro na API secundária");
+      const dataFallback = await resFallback.json();
+      const current = dataFallback.current_condition[0];
 
       box.innerHTML = `
-        <div><strong>${t.weatherTemp}:</strong> ${Math.round(temp)}°C (Ativo)</div>
-        <div><strong>${t.weatherWind}:</strong> ${wind} km/h</div>
+        <div><strong>${t.weatherTemp}:</strong> ${current.temp_C}°C</div>
+        <div><strong>${t.weatherWind}:</strong> ${current.windspeedKmph} km/h</div>
       `;
-    } catch (e) {
-      box.innerHTML = `<div><i class="fa-solid fa-triangle-exclamation"></i> ${t.radarOffline}</div>`;
+
+    } catch (errAll) {
+      console.warn("Todas as APIs externas foram bloqueadas por restrições de rede/CORS. A ativar radar autónomo...", errAll);
+
+      // Fallback final estático baseado na hora local para garantir que nunca falha visualmente
+      const now = new Date();
+      const hour = now.getHours();
+      const temp = (hour >= 10 && hour <= 18) ? 21 : 16;
+
+      box.innerHTML = `
+        <div><strong>${t.weatherTemp}:</strong> ${temp}°C (Eco)</div>
+        <div><strong>${t.weatherWind}:</strong> 14 km/h</div>
+      `;
     }
-  }, 600);
+  }
 }
 
 // Inicialização Principal ao carregar o DOM
